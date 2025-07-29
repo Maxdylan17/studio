@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,12 +16,33 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
 
+const COMPANY_PROFILE_KEY = 'fiscalflow:companyProfile';
+const CERTIFICATE_INFO_KEY = 'fiscalflow:certificateInfo';
+
 export default function ConfiguracoesPage() {
   const { toast } = useToast();
-  const [companyName, setCompanyName] = useState('FiscalFlow Soluções');
-  const [cnpj, setCnpj] = useState('00.000.000/0001-00');
+  const [companyName, setCompanyName] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [certificatePassword, setCertificatePassword] = useState('');
+
+  useEffect(() => {
+    const savedProfile = localStorage.getItem(COMPANY_PROFILE_KEY);
+    if (savedProfile) {
+      const { companyName, cnpj } = JSON.parse(savedProfile);
+      setCompanyName(companyName || 'FiscalFlow Soluções');
+      setCnpj(cnpj || '00.000.000/0001-00');
+    } else {
+        setCompanyName('FiscalFlow Soluções');
+        setCnpj('00.000.000/0001-00');
+    }
+
+    const savedCertInfo = localStorage.getItem(CERTIFICATE_INFO_KEY);
+    if (savedCertInfo) {
+      const { password } = JSON.parse(savedCertInfo);
+      setCertificatePassword(password || '');
+    }
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -30,12 +51,12 @@ export default function ConfiguracoesPage() {
   };
   
   const handleSaveChanges = () => {
-    console.log({
-        companyName,
-        cnpj,
-        certificateFile,
-        certificatePassword
-    });
+    const companyProfile = { companyName, cnpj };
+    localStorage.setItem(COMPANY_PROFILE_KEY, JSON.stringify(companyProfile));
+
+    const certificateInfo = { password: certificatePassword };
+    localStorage.setItem(CERTIFICATE_INFO_KEY, JSON.stringify(certificateInfo));
+    
     toast({
         title: "Configurações Salvas!",
         description: "As informações da sua empresa foram atualizadas."
