@@ -154,6 +154,7 @@ export default function ClientesPage() {
   const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.cpf_cnpj.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
@@ -331,3 +332,5 @@ export default function ClientesPage() {
     </div>
   );
 }
+
+    
