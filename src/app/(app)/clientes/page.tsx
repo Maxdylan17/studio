@@ -49,6 +49,7 @@ type Client = {
   name: string;
   email: string;
   phone: string;
+  cpf_cnpj: string; // Added this field
   userId: string;
 };
 
@@ -63,6 +64,7 @@ export default function ClientesPage() {
     name: '',
     email: '',
     phone: '',
+    cpf_cnpj: ''
   });
   const { toast } = useToast();
 
@@ -97,7 +99,7 @@ export default function ClientesPage() {
   
   const handleOpenDialog = (client: Partial<Client> | null) => {
     setEditingClient(client);
-    setClientFormData(client ? { name: client.name || '', email: client.email || '', phone: client.phone || '' } : { name: '', email: '', phone: '' });
+    setClientFormData(client ? { name: client.name || '', email: client.email || '', phone: client.phone || '', cpf_cnpj: client.cpf_cnpj || '' } : { name: '', email: '', phone: '', cpf_cnpj: '' });
     setOpen(true);
   }
 
@@ -106,14 +108,14 @@ export default function ClientesPage() {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para salvar um cliente.' });
         return;
     }
-    if (clientFormData.name && clientFormData.email && clientFormData.phone) {
+    if (clientFormData.name && clientFormData.email && clientFormData.phone && clientFormData.cpf_cnpj) {
       if (editingClient && editingClient.id) {
         // Edit existing client
         const clientRef = doc(db, "clients", editingClient.id);
         await updateDoc(clientRef, clientFormData);
         setClients(clients.map((client) =>
           client.id === editingClient.id ? { ...client, ...clientFormData } : client
-        ));
+        ) as Client[]);
         toast({
           title: 'Cliente Atualizado!',
           description: `${clientFormData.name} foi atualizado com sucesso.`,
@@ -133,6 +135,8 @@ export default function ClientesPage() {
       }
       setOpen(false);
       setEditingClient(null);
+    } else {
+        toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Preencha todos os campos para salvar.' });
     }
   };
 
@@ -160,7 +164,7 @@ export default function ClientesPage() {
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
         <div className="flex items-center gap-2">
-           <Dialog open={open} onOpenChange={setOpen}>
+           <Dialog open={open} onOpenChange={(isOpen) => { if(!isOpen) setEditingClient(null); setOpen(isOpen);}}>
             <DialogTrigger asChild>
                 <Button onClick={() => handleOpenDialog(null)}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Novo Cliente
@@ -196,6 +200,18 @@ export default function ClientesPage() {
                     value={clientFormData.email}
                     onChange={handleInputChange}
                     placeholder="contato@exemplo.com"
+                    className="col-span-3"
+                    />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="cpf_cnpj" className="text-right">
+                    CPF/CNPJ
+                    </Label>
+                    <Input
+                    id="cpf_cnpj"
+                    value={clientFormData.cpf_cnpj}
+                    onChange={handleInputChange}
+                    placeholder="00.000.000/0001-00"
                     className="col-span-3"
                     />
                 </div>
@@ -248,7 +264,7 @@ export default function ClientesPage() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead className="hidden sm:table-cell">E-mail</TableHead>
-                <TableHead className="hidden md:table-cell">Telefone</TableHead>
+                <TableHead className="hidden md:table-cell">CPF/CNPJ</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -272,7 +288,7 @@ export default function ClientesPage() {
                         {client.email}
                     </TableCell>
                     <TableCell className="hidden text-muted-foreground md:table-cell">
-                        {client.phone}
+                        {client.cpf_cnpj}
                     </TableCell>
                     <TableCell>
                         <DropdownMenu>
@@ -315,3 +331,5 @@ export default function ClientesPage() {
     </div>
   );
 }
+
+    

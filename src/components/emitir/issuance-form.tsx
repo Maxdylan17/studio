@@ -16,14 +16,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { PlusCircle, Send, Trash2 } from 'lucide-react';
+import { PlusCircle, Send, Trash2, Users } from 'lucide-react';
 import { DataCapture } from './data-capture';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Skeleton } from '../ui/skeleton';
 
 const itemSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
@@ -40,11 +43,22 @@ const formSchema = z.object({
   items: z.array(itemSchema).min(1, 'Adicione pelo menos um item.'),
 });
 
+type Client = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  cpf_cnpj: string;
+  userId: string;
+};
 
 export function IssuanceForm() {
-  const [user] = useAuthState(auth);
+  const [user, loadingAuth] = useAuthState(auth);
   const { toast } = useToast();
   const router = useRouter();
+  const [clients, setClients] = React.useState<Client[]>([]);
+  const [loadingClients, setLoadingClients] = React.useState(true);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -57,6 +71,30 @@ export function IssuanceForm() {
     },
   });
 
+  React.useEffect(() => {
+    const fetchClients = async () => {
+      if (user) {
+        setLoadingClients(true);
+        try {
+          const q = query(collection(db, "clients"), where("userId", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+          const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
+          setClients(clientsData);
+        } catch (error) {
+          console.error("Error fetching clients: ", error);
+          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar os clientes.' });
+        } finally {
+          setLoadingClients(false);
+        }
+      }
+    };
+
+    if (!loadingAuth) {
+      fetchClients();
+    }
+  }, [user, loadingAuth, toast]);
+
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'items',
@@ -65,6 +103,18 @@ export function IssuanceForm() {
   const totalValue = form.watch('items').reduce((acc, item) => {
     return acc + (item.quantity || 0) * (item.unitPrice || 0);
   }, 0);
+
+  const handleClientSelect = (clientId: string) => {
+    const selectedClient = clients.find(c => c.id === clientId);
+    if(selectedClient) {
+      form.setValue('destinatario.nome', selectedClient.name, { shouldValidate: true });
+      // The client data might have 'cpf_cnpj' or just 'phone' from previous versions. Let's try to get a document number.
+      // Assuming 'phone' might have been used for document in the past, or use a dedicated field.
+      // For this implementation, we will assume client has a 'cpf_cnpj' field now.
+      const clientDoc = selectedClient.cpf_cnpj || ''; // Fallback to empty string
+      form.setValue('destinatario.cpf_cnpj', clientDoc, { shouldValidate: true });
+    }
+  }
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -114,6 +164,31 @@ export function IssuanceForm() {
             <DataCapture form={form} />
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Selecionar Cliente Existente</Label>
+               {loadingClients ? (
+                <Skeleton className="h-10 w-full" />
+               ) : (
+                <Select onValueChange={handleClientSelect} disabled={clients.length === 0}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={clients.length > 0 ? "Selecione um cliente para preencher os dados" : "Nenhum cliente cadastrado"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+               )}
+            </div>
+            
+            <div className="relative my-4">
+                <Separator />
+                <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-card px-2 text-sm text-muted-foreground">OU</span>
+            </div>
+
             <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -250,3 +325,5 @@ export function IssuanceForm() {
     </Form>
   );
 }
+
+    
