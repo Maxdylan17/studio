@@ -21,7 +21,7 @@ import type {
 import type {
     ConversationalAnalysisInput,
     ConversationalAnalysisOutput
-} from '@/ai/flows/conversational-analysis';
+} from '@/ai/flows/schemas/conversational-analysis-schemas';
 
 
 export async function handleAnalyzeIssuanceTrends(
