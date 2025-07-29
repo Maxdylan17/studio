@@ -1,7 +1,9 @@
 
+import Link from "next/link";
+
 export function Logo() {
   return (
-    <div className="flex items-center gap-2 p-2">
+    (<div className="flex items-center gap-2 p-2 group-data-[collapsible=icon]:justify-center">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -21,6 +23,6 @@ export function Logo() {
       <h1 className="text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">
         FiscalFlow
       </h1>
-    </div>
+    </div>)
   );
 }
