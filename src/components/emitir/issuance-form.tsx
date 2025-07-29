@@ -27,6 +27,7 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Skeleton } from '../ui/skeleton';
 import { SmartIssuance } from './smart-issuance';
+import { Label } from '@/components/ui/label';
 
 const itemSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
