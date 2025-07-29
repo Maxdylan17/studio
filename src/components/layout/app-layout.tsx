@@ -35,8 +35,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
               <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
-                <span className="font-medium text-sm text-sidebar-foreground truncate">Usuário</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">Navegação Direta</span>
+                <span className="font-medium text-sm text-sidebar-foreground truncate">Usuário Local</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">Acesso Direto</span>
               </div>
             </div>
         </SidebarFooter>

@@ -20,9 +20,10 @@ interface AiAnalysisProps {
     volume: number;
     averageValue: number;
     trends: string;
+    loading: boolean;
 }
 
-export default function AiAnalysis({ volume, averageValue, trends }: AiAnalysisProps) {
+export default function AiAnalysis({ volume, averageValue, trends, loading: loadingData }: AiAnalysisProps) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AnalyzeIssuanceTrendsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export default function AiAnalysis({ volume, averageValue, trends }: AiAnalysisP
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {loading && (
+        {(loading || loadingData) && (
           <div className="space-y-4">
             <h4 className="font-semibold">Insights</h4>
             <Skeleton className="h-4 w-full" />
@@ -71,7 +72,7 @@ export default function AiAnalysis({ volume, averageValue, trends }: AiAnalysisP
           </div>
         )}
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {analysis && !loading && (
+        {analysis && !loading && !loadingData && (
           <div className="space-y-4 text-sm">
             <div>
               <h4 className="font-semibold mb-1">Insights</h4>
@@ -83,14 +84,14 @@ export default function AiAnalysis({ volume, averageValue, trends }: AiAnalysisP
             </div>
           </div>
         )}
-        {!analysis && !loading && !error && (
+        {!analysis && !loading && !loadingData && !error && (
             <div className="text-center text-sm text-muted-foreground p-8">
                 Clique no botão abaixo para gerar uma análise com IA.
             </div>
         )}
       </CardContent>
       <CardFooter>
-        <Button onClick={getAnalysis} disabled={loading} className="w-full">
+        <Button onClick={getAnalysis} disabled={loading || loadingData} className="w-full">
           {loading ? (
             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
           ) : (

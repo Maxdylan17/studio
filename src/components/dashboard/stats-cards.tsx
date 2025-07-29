@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, BarChart, CheckCircle, XCircle } from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
 
 interface StatsCardsProps {
     data: {
@@ -12,10 +13,11 @@ interface StatsCardsProps {
         averageValueChange: string;
         authorizedPercentage: string;
         canceledPercentage: string;
-    }
+    },
+    loading: boolean
 }
 
-export default function StatsCards({ data }: StatsCardsProps) {
+export default function StatsCards({ data, loading }: StatsCardsProps) {
   const stats = [
     {
       title: 'Volume Total (Mês)',
@@ -52,8 +54,17 @@ export default function StatsCards({ data }: StatsCardsProps) {
             <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
-            <p className="text-xs text-muted-foreground">{stat.description}</p>
+            {loading ? (
+              <div className="space-y-2">
+                 <Skeleton className="h-8 w-3/4" />
+                 <Skeleton className="h-3 w-1/2" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">{stat.description}</p>
+              </>
+            )}
           </CardContent>
         </Card>
       ))}

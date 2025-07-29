@@ -154,46 +154,34 @@ export default function DashboardPage() {
     fetchInvoices();
   }, []);
 
-  const isLoading = loadingData;
-
   return (
-    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
+    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
       </div>
-       {isLoading ? (
-        <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Skeleton className="h-[126px]" />
-            <Skeleton className="h-[126px]" />
-            <Skeleton className="h-[126px]" />
-            <Skeleton className="h-[126px]" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Skeleton className="col-span-4 h-[438px]" />
-            <Skeleton className="col-span-3 h-[438px]" />
-          </div>
-        </div>
-      ) : (
-        <>
-          <StatsCards data={statsData} />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Visão Geral de Emissões</CardTitle>
-              </CardHeader>
-              <CardContent className="pl-2">
+      <StatsCards data={statsData} loading={loadingData} />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Visão Geral de Emissões</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+             {loadingData ? (
+                <div className="h-[350px] w-full flex items-center justify-center">
+                    <Skeleton className="h-[300px] w-[95%]" />
+                </div>
+             ) : (
                 <TrendsChart data={chartData} />
-              </CardContent>
-            </Card>
-            <AiAnalysis
-              volume={statsData.volume}
-              averageValue={statsData.averageValue}
-              trends={statsData.trends}
-            />
-          </div>
-        </>
-      )}
+             )}
+          </CardContent>
+        </Card>
+        <AiAnalysis
+          volume={statsData.volume}
+          averageValue={statsData.averageValue}
+          trends={statsData.trends}
+          loading={loadingData}
+        />
+      </div>
     </div>
   );
 }
