@@ -1,163 +1,153 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Download, FileDown, FileText } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from '@/components/ui/input';
+import { Send, Bot, User, BrainCircuit, MessageSquare, RefreshCw } from 'lucide-react';
+import { handleConversationalAnalysis } from '@/lib/actions';
+import ReactMarkdown from 'react-markdown';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Report = {
-  id: string;
-  name: string;
-  generatedAt: string;
-  userId: string;
-};
+type Message = {
+    role: 'user' | 'assistant';
+    content: string;
+}
 
-const FAKE_USER_ID = "local-user";
+const examplePrompts = [
+    "Qual foi meu faturamento total este mês?",
+    "Liste minhas 5 últimas notas emitidas.",
+    "Quais clientes compraram mais de R$ 1.000,00?",
+    "Gere um resumo dos meus clientes."
+]
 
 export default function RelatoriosPage() {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    const fetchReports = async () => {
-        setLoadingData(true);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleSendMessage = async (prompt?: string) => {
+        const userMessage = prompt || input;
+        if (!userMessage.trim()) return;
+        
+        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+        setLoading(true);
+        setInput('');
+
         try {
-          const q = query(collection(db, 'reports'), where('userId', '==', FAKE_USER_ID), orderBy('generatedAt', 'desc'));
-          const querySnapshot = await getDocs(q);
-          const reportsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Report[];
-          setReports(reportsData);
+            const result = await handleConversationalAnalysis({ query: userMessage });
+            setMessages(prev => [...prev, { role: 'assistant', content: result.answer }]);
         } catch (error) {
-           console.error("Error fetching reports: ", error);
-           toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar os relatórios.' });
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: "Erro na Análise",
+                description: "Não foi possível processar sua pergunta. Tente novamente."
+            });
+            setMessages(prev => [...prev, { role: 'assistant', content: "Desculpe, ocorreu um erro ao processar sua solicitação." }]);
         } finally {
-          setLoadingData(false);
+            setLoading(false);
         }
     };
-    fetchReports();
-  }, [toast]);
-
-
-  const handleGenerateReport = async () => {
-    setIsGenerating(true);
     
-    // Simulating report generation delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newReportData = {
-      name: `Relatório Fiscal - ${new Date().toLocaleDateString('pt-BR')}`,
-      generatedAt: new Date().toISOString(),
-      userId: FAKE_USER_ID
-    };
-
-    try {
-      const docRef = await addDoc(collection(db, 'reports'), newReportData);
-      const newReport = {id: docRef.id, ...newReportData, generatedAt: new Date(newReportData.generatedAt).toLocaleString('pt-BR')};
-
-      // Firestore returns ISO string, format it for display
-      const displayReport = {...newReport, generatedAt: new Date(newReport.generatedAt).toLocaleString('pt-BR')}
-      
-      setReports(prev => [displayReport as Report, ...prev]);
-
-      toast({
-        title: 'Relatório Gerado!',
-        description: 'Seu novo relatório está pronto para download.',
-      });
-    } catch (error) {
-       console.error("Error generating report: ", error);
-       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível gerar o relatório.' });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleDownload = () => {
-    toast({
-      title: 'Download Iniciado (Simulação)',
-      description: 'Em um ambiente real, o arquivo do relatório seria baixado.',
-    });
-  }
-
-  const isLoading = loadingData;
-
-  return (
-    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
-      <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
-         <Button onClick={handleGenerateReport} disabled={isGenerating || isLoading}>
-            {isGenerating ? (
-                <>
-                    <FileDown className="mr-2 h-4 w-4 animate-pulse" /> Gerando...
-                </>
-            ) : (
-                <>
-                    <FileDown className="mr-2 h-4 w-4" /> Gerar Relatório
-                </>
-            )}
-        </Button>
-      </div>
-      <Card>
-        <CardHeader>
-            <CardTitle>Relatórios Fiscais Gerados</CardTitle>
-            <CardDescription>
-                Visualize e baixe os relatórios gerados pelo sistema.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            {isLoading ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({length: 3}).map((_, i) => (
-                        <Card key={i} className="flex flex-col">
-                             <CardHeader className="flex-row items-start gap-4 space-y-0 pb-4">
-                                <Skeleton className='h-8 w-8' />
-                                <div className='flex-1 space-y-2'>
-                                    <Skeleton className="h-5 w-4/5" />
-                                    <Skeleton className="h-4 w-3/5" />
-                                </div>
-                            </CardHeader>
-                            <CardFooter>
-                                <Skeleton className="h-9 w-full" />
-                            </CardFooter>
-                        </Card>
-                    ))}
+    return (
+        <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
+            <div className="flex items-center justify-between space-y-2">
+                <div className='flex items-end gap-2'>
+                    <BrainCircuit className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Análise Conversacional</h1>
+                        <p className="text-muted-foreground">Pergunte e obtenha insights sobre seu negócio.</p>
+                    </div>
                 </div>
-            ) : reports.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {reports.map(report => (
-                        <Card key={report.id} className="flex flex-col">
-                            <CardHeader className="flex-row items-start gap-4 space-y-0 pb-4">
-                                <div className="flex-shrink-0">
-                                    <FileText className="h-8 w-8 text-muted-foreground" />
+            </div>
+            
+            <Card className="h-[calc(100vh-12rem)] flex flex-col">
+                <CardContent className="flex-1 p-6 overflow-y-auto space-y-6">
+                    {messages.length === 0 ? (
+                        <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full">
+                            <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                            <h3 className="text-lg font-semibold mb-2">Comece a Conversar com seus Dados</h3>
+                            <p className="text-sm max-w-md mx-auto mb-6">Faça perguntas em linguagem natural sobre suas vendas, clientes e faturamento.</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
+                                {examplePrompts.map(prompt => (
+                                    <Button 
+                                        key={prompt}
+                                        variant="outline" 
+                                        className="text-left h-auto py-2"
+                                        onClick={() => handleSendMessage(prompt)}
+                                    >
+                                        {prompt}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        messages.map((message, index) => (
+                            <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                                {message.role === 'assistant' && (
+                                    <div className="bg-primary text-primary-foreground rounded-full p-2">
+                                        <Bot className="h-5 w-5" />
+                                    </div>
+                                )}
+                                <div className={`max-w-xl rounded-lg p-3 ${message.role === 'user' ? 'bg-secondary text-secondary-foreground' : 'bg-card border'}`}>
+                                    <article className="prose prose-sm dark:prose-invert max-w-none">
+                                        <ReactMarkdown
+                                            components={{
+                                                table: ({node, ...props}) => <table className="table-auto w-full" {...props} />,
+                                                thead: ({node, ...props}) => <thead className="bg-muted" {...props} />,
+                                                tr: ({node, ...props}) => <tr className="border-b" {...props} />,
+                                                th: ({node, ...props}) => <th className="p-2 text-left font-medium" {...props} />,
+                                                td: ({node, ...props}) => <td className="p-2" {...props} />,
+
+                                            }}
+                                        >{message.content}</ReactMarkdown>
+                                    </article>
                                 </div>
-                                <div className='flex-1'>
-                                    <CardTitle className="text-base">{report.name}</CardTitle>
-                                    <CardDescription>Gerado em: {new Date(report.generatedAt).toLocaleString('pt-BR')}</CardDescription>
-                                </div>
-                            </CardHeader>
-                            <CardFooter>
-                                <Button className="w-full" variant="secondary" onClick={handleDownload}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Baixar
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
+                                {message.role === 'user' && (
+                                    <div className="bg-muted text-muted-foreground rounded-full p-2">
+                                        <User className="h-5 w-5" />
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                    {loading && (
+                        <div className="flex items-start gap-4">
+                            <div className="bg-primary text-primary-foreground rounded-full p-2">
+                                <Bot className="h-5 w-5" />
+                            </div>
+                            <div className="max-w-xl rounded-lg p-3 bg-card border w-full">
+                                <Skeleton className="h-4 w-1/4" />
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+                <div className="border-t p-4">
+                    <div className="relative">
+                        <Input
+                            placeholder="Pergunte algo sobre suas notas fiscais, clientes, faturamento..."
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            disabled={loading}
+                            className="pr-12"
+                        />
+                        <Button 
+                            type="submit" 
+                            size="icon" 
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                            onClick={() => handleSendMessage()}
+                            disabled={loading || !input.trim()}
+                        >
+                            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                    </div>
                 </div>
-            ) : (
-                 <div className="text-center text-muted-foreground py-12">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                    <p className='mb-2 font-medium'>Nenhum relatório gerado ainda.</p>
-                    <p className='text-sm'>Clique em "Gerar Relatório" para começar.</p>
-                </div>
-            )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+            </Card>
+        </div>
+    );
 }

@@ -4,6 +4,7 @@
 import { analyzeIssuanceTrends } from '@/ai/flows/analyze-issuance-trends';
 import { smartDataCapture } from '@/ai/flows/smart-data-capture';
 import { smartIssuance } from '@/ai/flows/smart-issuance';
+import { conversationalAnalysis } from '@/ai/flows/conversational-analysis';
 
 import type {
   AnalyzeIssuanceTrendsInput,
@@ -17,6 +18,10 @@ import type {
     SmartIssuanceInput,
     SmartIssuanceOutput
 } from '@/ai/flows/smart-issuance';
+import type {
+    ConversationalAnalysisInput,
+    ConversationalAnalysisOutput
+} from '@/ai/flows/conversational-analysis';
 
 
 export async function handleAnalyzeIssuanceTrends(
@@ -53,4 +58,16 @@ export async function handleSmartIssuance(
         console.error('Error with smart issuance:', error);
         throw new Error('Failed to generate items from description.');
     }
+}
+
+export async function handleConversationalAnalysis(
+  input: ConversationalAnalysisInput
+): Promise<ConversationalAnalysisOutput> {
+  try {
+    const result = await conversationalAnalysis(input);
+    return result;
+  } catch (error) {
+    console.error('Error with conversational analysis:', error);
+    throw new Error('Failed to process conversational query.');
+  }
 }
