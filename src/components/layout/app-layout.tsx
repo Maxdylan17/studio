@@ -13,7 +13,7 @@ import {
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { Logo } from './logo';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { LogOut, ShieldAlert } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -27,28 +27,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // This is a placeholder for a real Firebase config check
-  const isFirebaseConfigured = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      setLoading(false);
-      return;
-    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [isFirebaseConfigured]);
+  }, []);
 
   useEffect(() => {
-    if (!loading && !user && isFirebaseConfigured) {
+    if (!loading && !user) {
       router.push('/login');
     }
-  }, [user, loading, router, isFirebaseConfigured]);
+  }, [user, loading, router]);
 
   const handleLogout = async () => {
     try {
@@ -66,18 +59,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       });
     }
   };
-  
-  if (!isFirebaseConfigured) {
-    return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-background p-8 text-center">
-        <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Configuração do Firebase Incompleta</h1>
-        <p className="text-muted-foreground max-w-md">
-          A configuração do seu projeto Firebase parece estar faltando ou incorreta. Por favor, verifique as variáveis de ambiente NEXT_PUBLIC_FIREBASE_* para habilitar a autenticação e o banco de dados.
-        </p>
-      </div>
-    );
-  }
 
   if (loading || !user) {
      return (
