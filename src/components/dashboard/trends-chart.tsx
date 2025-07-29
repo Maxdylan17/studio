@@ -1,9 +1,10 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
-const data = [
+const generateData = () => [
   { month: 'Jan', total: Math.floor(Math.random() * 5000) + 1000 },
   { month: 'Fev', total: Math.floor(Math.random() * 5000) + 1000 },
   { month: 'Mar', total: Math.floor(Math.random() * 5000) + 1000 },
@@ -19,6 +20,12 @@ const data = [
 ];
 
 export default function TrendsChart() {
+    const [data, setData] = useState<any[]>([]);
+
+    useEffect(() => {
+        setData(generateData());
+    }, []);
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>

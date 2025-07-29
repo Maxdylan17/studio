@@ -56,8 +56,7 @@ export default function NotasPage() {
                       variant={
                         invoice.status === 'autorizada' ? 'default' : 
                         invoice.status === 'cancelada' ? 'destructive' : 'secondary'
-                      } 
-                      className={invoice.status === 'autorizada' ? 'bg-green-500 hover:bg-green-600' : ''}
+                      }
                     >
                       {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                     </Badge>
