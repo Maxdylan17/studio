@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
 import { Download, Mail, Eye } from 'lucide-react';
 
-const invoices: Invoice[] = [
+const mockInvoices: Invoice[] = [
   {
     id: '1',
     key: 'NFE35240700000000000111550010000001231000000123',
@@ -74,9 +74,22 @@ const invoices: Invoice[] = [
   },
 ];
 
+const INVOICES_STORAGE_KEY = 'fiscalflow:invoices';
+
+
 export default function NotasPage() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const savedInvoices = localStorage.getItem(INVOICES_STORAGE_KEY);
+    if (savedInvoices) {
+      setInvoices(JSON.parse(savedInvoices));
+    } else {
+      setInvoices(mockInvoices);
+    }
+  }, []);
 
   const handleAction = (action: string) => {
     toast({
@@ -88,7 +101,7 @@ export default function NotasPage() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Notas Fiscais</h1>
+        <h3 className="text-3xl font-bold tracking-tight">Notas Fiscais</h3>
       </div>
       <Card>
         <CardHeader>

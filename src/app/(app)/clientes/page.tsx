@@ -79,8 +79,11 @@ const mockClients: Client[] = [
   },
 ];
 
+const CLIENTS_STORAGE_KEY = 'fiscalflow:clients';
+
+
 export default function ClientesPage() {
-  const [clients, setClients] = React.useState<Client[]>(mockClients);
+  const [clients, setClients] = React.useState<Client[]>([]);
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [newClient, setNewClient] = React.useState({
@@ -90,6 +93,21 @@ export default function ClientesPage() {
   });
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    const savedClients = localStorage.getItem(CLIENTS_STORAGE_KEY);
+    if (savedClients) {
+      setClients(JSON.parse(savedClients));
+    } else {
+      setClients(mockClients);
+    }
+  }, []);
+
+  const persistClients = (updatedClients: Client[]) => {
+    setClients(updatedClients);
+    localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(updatedClients));
+  };
+
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setNewClient((prev) => ({ ...prev, [id]: value }));
@@ -98,10 +116,11 @@ export default function ClientesPage() {
   const handleSaveClient = () => {
     if (newClient.name && newClient.email && newClient.phone) {
       const newClientData = {
-        id: (clients.length + 1).toString(),
+        id: `client-${Date.now()}`,
         ...newClient,
       };
-      setClients((prev) => [...prev, newClientData]);
+      const updatedClients = [...clients, newClientData];
+      persistClients(updatedClients);
       toast({
         title: 'Cliente Salvo!',
         description: `${newClient.name} foi adicionado à sua lista de clientes.`,
@@ -112,7 +131,8 @@ export default function ClientesPage() {
   };
 
   const handleDeleteClient = (clientId: string) => {
-    setClients((prev) => prev.filter((client) => client.id !== clientId));
+    const updatedClients = clients.filter((client) => client.id !== clientId);
+    persistClients(updatedClients);
     toast({
         title: 'Cliente Excluído!',
         description: 'O cliente foi removido da sua lista.',
@@ -129,7 +149,7 @@ export default function ClientesPage() {
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 sm:p-8">
       <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+        <h3 className="text-3xl font-bold tracking-tight">Clientes</h3>
         <div className="flex items-center gap-2">
            <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

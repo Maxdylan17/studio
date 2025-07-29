@@ -19,6 +19,8 @@ import { Separator } from '../ui/separator';
 import { PlusCircle, Send, Trash2 } from 'lucide-react';
 import { DataCapture } from './data-capture';
 import { useToast } from '@/hooks/use-toast';
+import type { Invoice } from '@/lib/definitions';
+import { useRouter } from 'next/navigation';
 
 const itemSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
@@ -35,8 +37,11 @@ const formSchema = z.object({
   items: z.array(itemSchema).min(1, 'Adicione pelo menos um item.'),
 });
 
+const INVOICES_STORAGE_KEY = 'fiscalflow:invoices';
+
 export function IssuanceForm() {
   const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,18 +58,34 @@ export function IssuanceForm() {
     control: form.control,
     name: 'items',
   });
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: 'Nota Emitida (Simulação)',
-      description: 'Sua nota fiscal foi enviada para a SEFAZ.',
-    });
-  }
-
+  
   const totalValue = form.watch('items').reduce((acc, item) => {
     return acc + (item.quantity || 0) * (item.unitPrice || 0);
   }, 0);
+
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    const newInvoice: Invoice = {
+      id: `nfe-${Date.now()}`,
+      key: `NFE352407${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
+      client: values.destinatario.nome,
+      date: new Date().toISOString().split('T')[0],
+      status: 'autorizada',
+      value: totalValue.toFixed(2).replace('.',','),
+    }
+
+    const savedInvoices = localStorage.getItem(INVOICES_STORAGE_KEY);
+    const invoices = savedInvoices ? JSON.parse(savedInvoices) : [];
+    const updatedInvoices = [newInvoice, ...invoices];
+    localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(updatedInvoices));
+
+    toast({
+      title: 'Nota Emitida com Sucesso!',
+      description: 'Sua nota fiscal foi enviada para a SEFAZ e salva no histórico.',
+    });
+
+    router.push('/notas');
+  }
 
   return (
     <Form {...form}>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileDown, FileText } from "lucide-react";
@@ -13,21 +13,36 @@ type Report = {
   generatedAt: string;
 };
 
+const REPORTS_STORAGE_KEY = 'fiscalflow:reports';
+
 export default function RelatoriosPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const savedReports = localStorage.getItem(REPORTS_STORAGE_KEY);
+    if (savedReports) {
+      setReports(JSON.parse(savedReports));
+    }
+  }, []);
+
+  const persistReports = (updatedReports: Report[]) => {
+    setReports(updatedReports);
+    localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(updatedReports));
+  };
+
 
   const handleGenerateReport = () => {
     setIsLoading(true);
-    // Simula uma pequena espera para a geração do relatório
     setTimeout(() => {
       const newReport: Report = {
         id: `rep-${Date.now()}`,
         name: `Relatório Fiscal - ${new Date().toLocaleDateString('pt-BR')}`,
         generatedAt: new Date().toLocaleString('pt-BR'),
       };
-      setReports(prevReports => [newReport, ...prevReports]);
+      const updatedReports = [newReport, ...reports];
+      persistReports(updatedReports);
       setIsLoading(false);
       toast({
         title: 'Relatório Gerado!',
@@ -46,7 +61,7 @@ export default function RelatoriosPage() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
+        <h3 className="text-3xl font-bold tracking-tight">Relatórios</h3>
          <Button onClick={handleGenerateReport} disabled={isLoading}>
             {isLoading ? (
                 <>
