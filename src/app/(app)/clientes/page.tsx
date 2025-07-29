@@ -86,7 +86,8 @@ export default function ClientesPage() {
   const [clients, setClients] = React.useState<Client[]>([]);
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [newClient, setNewClient] = React.useState({
+  const [editingClient, setEditingClient] = React.useState<Client | null>(null);
+  const [clientFormData, setClientFormData] = React.useState({
     name: '',
     email: '',
     phone: '',
@@ -110,23 +111,42 @@ export default function ClientesPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setNewClient((prev) => ({ ...prev, [id]: value }));
+    setClientFormData((prev) => ({ ...prev, [id]: value }));
   };
+  
+  const handleOpenDialog = (client: Client | null) => {
+    setEditingClient(client);
+    setClientFormData(client ? { ...client } : { name: '', email: '', phone: '' });
+    setOpen(true);
+  }
 
   const handleSaveClient = () => {
-    if (newClient.name && newClient.email && newClient.phone) {
-      const newClientData = {
-        id: `client-${Date.now()}`,
-        ...newClient,
-      };
-      const updatedClients = [...clients, newClientData];
+    if (clientFormData.name && clientFormData.email && clientFormData.phone) {
+      let updatedClients;
+      if (editingClient) {
+        // Edit existing client
+        updatedClients = clients.map((client) =>
+          client.id === editingClient.id ? { ...client, ...clientFormData } : client
+        );
+        toast({
+          title: 'Cliente Atualizado!',
+          description: `${clientFormData.name} foi atualizado com sucesso.`,
+        });
+      } else {
+        // Add new client
+        const newClientData = {
+          id: `client-${Date.now()}`,
+          ...clientFormData,
+        };
+        updatedClients = [...clients, newClientData];
+        toast({
+          title: 'Cliente Salvo!',
+          description: `${clientFormData.name} foi adicionado à sua lista de clientes.`,
+        });
+      }
       persistClients(updatedClients);
-      toast({
-        title: 'Cliente Salvo!',
-        description: `${newClient.name} foi adicionado à sua lista de clientes.`,
-      });
-      setNewClient({ name: '', email: '', phone: '' });
       setOpen(false);
+      setEditingClient(null);
     }
   };
 
@@ -153,16 +173,15 @@ export default function ClientesPage() {
         <div className="flex items-center gap-2">
            <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button onClick={() => handleOpenDialog(null)}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Novo Cliente
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                <DialogTitle>Adicionar Novo Cliente</DialogTitle>
+                <DialogTitle>{editingClient ? 'Editar Cliente' : 'Adicionar Novo Cliente'}</DialogTitle>
                 <DialogDescription>
-                    Preencha as informações do novo cliente. Clique em salvar para
-                    concluir.
+                    {editingClient ? 'Altere as informações do cliente.' : 'Preencha as informações do novo cliente.'} Clique em salvar para concluir.
                 </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -172,7 +191,7 @@ export default function ClientesPage() {
                     </Label>
                     <Input
                     id="name"
-                    value={newClient.name}
+                    value={clientFormData.name}
                     onChange={handleInputChange}
                     placeholder="Empresa Exemplo"
                     className="col-span-3"
@@ -185,7 +204,7 @@ export default function ClientesPage() {
                     <Input
                     id="email"
                     type="email"
-                    value={newClient.email}
+                    value={clientFormData.email}
                     onChange={handleInputChange}
                     placeholder="contato@exemplo.com"
                     className="col-span-3"
@@ -197,7 +216,7 @@ export default function ClientesPage() {
                     </Label>
                     <Input
                     id="phone"
-                    value={newClient.phone}
+                    value={clientFormData.phone}
                     onChange={handleInputChange}
                     placeholder="(11) 99999-9999"
                     className="col-span-3"
@@ -271,7 +290,7 @@ export default function ClientesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleOpenDialog(client)}>Editar</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDeleteClient(client.id)}>
                             Excluir
                             </DropdownMenuItem>
