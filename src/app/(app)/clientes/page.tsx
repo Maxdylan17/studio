@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -82,6 +82,7 @@ const mockClients: Client[] = [
 export default function ClientesPage() {
   const [clients, setClients] = React.useState<Client[]>(mockClients);
   const [open, setOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
   const [newClient, setNewClient] = React.useState({
     name: '',
     email: '',
@@ -119,77 +120,99 @@ export default function ClientesPage() {
     })
   };
 
+  const filteredClients = clients.filter((client) =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 sm:p-8">
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Novo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Adicionar Novo Cliente</DialogTitle>
-              <DialogDescription>
-                Preencha as informações do novo cliente. Clique em salvar para
-                concluir.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Nome
-                </Label>
-                <Input
-                  id="name"
-                  value={newClient.name}
-                  onChange={handleInputChange}
-                  placeholder="Empresa Exemplo"
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  E-mail
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newClient.email}
-                  onChange={handleInputChange}
-                  placeholder="contato@exemplo.com"
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="phone" className="text-right">
-                  Telefone
-                </Label>
-                <Input
-                  id="phone"
-                  value={newClient.phone}
-                  onChange={handleInputChange}
-                  placeholder="(11) 99999-9999"
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleSaveClient}>
-                Salvar Cliente
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+           <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Novo Cliente
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                <DialogTitle>Adicionar Novo Cliente</DialogTitle>
+                <DialogDescription>
+                    Preencha as informações do novo cliente. Clique em salvar para
+                    concluir.
+                </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                    Nome
+                    </Label>
+                    <Input
+                    id="name"
+                    value={newClient.name}
+                    onChange={handleInputChange}
+                    placeholder="Empresa Exemplo"
+                    className="col-span-3"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">
+                    E-mail
+                    </Label>
+                    <Input
+                    id="email"
+                    type="email"
+                    value={newClient.email}
+                    onChange={handleInputChange}
+                    placeholder="contato@exemplo.com"
+                    className="col-span-3"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="phone" className="text-right">
+                    Telefone
+                    </Label>
+                    <Input
+                    id="phone"
+                    value={newClient.phone}
+                    onChange={handleInputChange}
+                    placeholder="(11) 99999-9999"
+                    className="col-span-3"
+                    />
+                </div>
+                </div>
+                <DialogFooter>
+                <Button type="submit" onClick={handleSaveClient}>
+                    Salvar Cliente
+                </Button>
+                </DialogFooter>
+            </DialogContent>
+            </Dialog>
+        </div>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
-          <CardDescription>
-            Gerencie seus clientes cadastrados.
-          </CardDescription>
+            <div className='flex sm:flex-row flex-col justify-between gap-4'>
+                <div>
+                    <CardTitle>Lista de Clientes</CardTitle>
+                    <CardDescription>
+                        Gerencie seus clientes cadastrados.
+                    </CardDescription>
+                </div>
+                <div className="relative sm:w-64">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Buscar cliente..."
+                        className="pl-8"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -204,38 +227,46 @@ export default function ClientesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell className="hidden text-muted-foreground sm:table-cell">
-                    {client.email}
-                  </TableCell>
-                  <TableCell className="hidden text-muted-foreground md:table-cell">
-                    {client.phone}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-haspopup="true"
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteClient(client.id)}>
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+              {filteredClients.length > 0 ? (
+                filteredClients.map((client) => (
+                    <TableRow key={client.id}>
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="hidden text-muted-foreground sm:table-cell">
+                        {client.email}
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground md:table-cell">
+                        {client.phone}
+                    </TableCell>
+                    <TableCell>
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                            >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteClient(client.id)}>
+                            Excluir
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                    </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                        Nenhum cliente encontrado.
+                    </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
