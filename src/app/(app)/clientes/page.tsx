@@ -37,8 +37,16 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
-const mockClients = [
+type Client = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+};
+
+const mockClients: Client[] = [
   {
     id: '1',
     name: 'Tech Solutions Ltda.',
@@ -72,7 +80,44 @@ const mockClients = [
 ];
 
 export default function ClientesPage() {
+  const [clients, setClients] = React.useState<Client[]>(mockClients);
   const [open, setOpen] = React.useState(false);
+  const [newClient, setNewClient] = React.useState({
+    name: '',
+    email: '',
+    phone: '',
+  });
+  const { toast } = useToast();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewClient((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleSaveClient = () => {
+    if (newClient.name && newClient.email && newClient.phone) {
+      const newClientData = {
+        id: (clients.length + 1).toString(),
+        ...newClient,
+      };
+      setClients((prev) => [...prev, newClientData]);
+      toast({
+        title: 'Cliente Salvo!',
+        description: `${newClient.name} foi adicionado à sua lista de clientes.`,
+      });
+      setNewClient({ name: '', email: '', phone: '' });
+      setOpen(false);
+    }
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    setClients((prev) => prev.filter((client) => client.id !== clientId));
+    toast({
+        title: 'Cliente Excluído!',
+        description: 'O cliente foi removido da sua lista.',
+        variant: 'destructive'
+    })
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 sm:p-8">
@@ -99,7 +144,9 @@ export default function ClientesPage() {
                 </Label>
                 <Input
                   id="name"
-                  defaultValue="Empresa Exemplo"
+                  value={newClient.name}
+                  onChange={handleInputChange}
+                  placeholder="Empresa Exemplo"
                   className="col-span-3"
                 />
               </div>
@@ -110,7 +157,9 @@ export default function ClientesPage() {
                 <Input
                   id="email"
                   type="email"
-                  defaultValue="contato@exemplo.com"
+                  value={newClient.email}
+                  onChange={handleInputChange}
+                  placeholder="contato@exemplo.com"
                   className="col-span-3"
                 />
               </div>
@@ -120,13 +169,15 @@ export default function ClientesPage() {
                 </Label>
                 <Input
                   id="phone"
-                  defaultValue="(11) 99999-9999"
+                  value={newClient.phone}
+                  onChange={handleInputChange}
+                  placeholder="(11) 99999-9999"
                   className="col-span-3"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" onClick={() => setOpen(false)}>
+              <Button type="submit" onClick={handleSaveClient}>
                 Salvar Cliente
               </Button>
             </DialogFooter>
@@ -153,7 +204,7 @@ export default function ClientesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockClients.map((client) => (
+              {clients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
                   <TableCell className="hidden text-muted-foreground sm:table-cell">
@@ -177,7 +228,9 @@ export default function ClientesPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem>Editar</DropdownMenuItem>
-                        <DropdownMenuItem>Excluir</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteClient(client.id)}>
+                          Excluir
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
