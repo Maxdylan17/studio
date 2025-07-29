@@ -142,176 +142,178 @@ export function IssuanceForm() {
 
   return (
     <Form {...form}>
-       <SmartIssuance form={form} replace={replace} />
-       <div className="relative my-6">
+      <div className="space-y-6">
+        <SmartIssuance form={form} replace={replace} />
+        <div className="relative my-6">
             <Separator />
             <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-background px-2 text-sm text-muted-foreground">OU PREENCHA MANUALMENTE</span>
         </div>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Destinatário</CardTitle>
-            <DataCapture form={form} />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Selecionar Cliente Existente</Label>
-               {loadingClients ? (
-                <Skeleton className="h-10 w-full" />
-               ) : (
-                <Select onValueChange={handleClientSelect} disabled={clients.length === 0}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={clients.length > 0 ? "Selecione um cliente para preencher os dados" : "Nenhum cliente cadastrado"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-               )}
-            </div>
-            
-            <div className="relative my-4">
-                <Separator />
-                <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-card px-2 text-sm text-muted-foreground">OU</span>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="destinatario.nome"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome/Razão Social</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome do cliente" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Destinatário</CardTitle>
+              <DataCapture form={form} />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Selecionar Cliente Existente</Label>
+                {loadingClients ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <Select onValueChange={handleClientSelect} disabled={clients.length === 0}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={clients.length > 0 ? "Selecione um cliente para preencher os dados" : "Nenhum cliente cadastrado"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map(client => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="destinatario.cpf_cnpj"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPF/CNPJ</FormLabel>
-                    <FormControl>
-                      <Input placeholder="000.000.000-00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="destinatario.endereco"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Rua, Número, Bairro, Cidade - Estado" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Itens da Nota</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {fields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-12 gap-4 items-end">
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.description`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-12 sm:col-span-6">
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Produto ou serviço" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.quantity`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-4 sm:col-span-2">
-                      <FormLabel>Qtd.</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.unitPrice`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-5 sm:col-span-2">
-                      <FormLabel>Preço Unit.</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="R$" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="col-span-3 sm:col-span-2 flex justify-end">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => remove(index)}
-                      disabled={fields.length <= 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
               </div>
-            ))}
-             <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => append({ description: '', quantity: 1, unitPrice: 0 })}
-            >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Item
+              
+              <div className="relative my-4">
+                  <Separator />
+                  <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-card px-2 text-sm text-muted-foreground">OU</span>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="destinatario.nome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome/Razão Social</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do cliente" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="destinatario.cpf_cnpj"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF/CNPJ</FormLabel>
+                      <FormControl>
+                        <Input placeholder="000.000.000-00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="destinatario.endereco"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endereço (Opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Rua, Número, Bairro, Cidade - Estado" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Itens da Nota</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-12 gap-4 items-end">
+                  <FormField
+                    control={form.control}
+                    name={`items.${index}.description`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-12 sm:col-span-6">
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Produto ou serviço" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`items.${index}.quantity`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-4 sm:col-span-2">
+                        <FormLabel>Qtd.</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`items.${index}.unitPrice`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-5 sm:col-span-2">
+                        <FormLabel>Preço Unit.</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="R$" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="col-span-3 sm:col-span-2 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        disabled={fields.length <= 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                  </div>
+                </div>
+              ))}
+              <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => append({ description: '', quantity: 1, unitPrice: 0 })}
+              >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Adicionar Item
+              </Button>
+              <Separator className="my-4" />
+              <div className='flex justify-end items-center'>
+                  <p className="text-lg font-semibold">
+                      Total: {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="flex justify-end">
+            <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? 'Emitindo...' : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Emitir Nota
+                </>
+              )}
             </Button>
-            <Separator className="my-4" />
-            <div className='flex justify-end items-center'>
-                <p className="text-lg font-semibold">
-                    Total: {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <div className="flex justify-end">
-          <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? 'Emitindo...' : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Emitir Nota
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
+          </div>
+        </form>
+      </div>
     </Form>
   );
 }
