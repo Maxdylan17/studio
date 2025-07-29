@@ -25,8 +25,9 @@ import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
 
 const formSchema = z.object({
@@ -53,10 +54,20 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
       
-      await updateProfile(userCredential.user, {
+      // Update user profile
+      await updateProfile(user, {
         displayName: values.name,
       });
+      
+      // Create initial settings for the new user
+      const settingsData = {
+        companyName: 'FiscalFlow Soluções',
+        cnpj: '00.000.000/0001-00',
+        certificatePassword: ''
+      };
+      await setDoc(doc(db, "settings", user.uid), settingsData);
 
       toast({
         title: 'Conta criada com sucesso!',
