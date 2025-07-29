@@ -22,7 +22,7 @@ import { Button } from '../ui/button';
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon">
         <SidebarHeader>
           <Logo />
         </SidebarHeader>
@@ -32,7 +32,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
            <div className="flex items-center gap-3">
               <Avatar className="h-9 w-9">
-                <AvatarImage src="https://placehold.co/40x40" alt="Avatar" />
+                <AvatarImage src="https://placehold.co/40x40" alt="Avatar" data-ai-hint="avatar user" />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
               <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
