@@ -14,8 +14,21 @@ import { Logo } from './logo';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    toast({
+      title: 'Logout Realizado',
+      description: 'Você foi desconectado com segurança.',
+    });
+    router.push('/login');
+  };
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -35,7 +48,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <span className="font-medium text-sm text-sidebar-foreground truncate">Usuário Teste</span>
                 <span className="text-xs text-sidebar-foreground/70 truncate">usuario@fiscalflow.com</span>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto group-data-[collapsible=icon]:hidden">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 ml-auto group-data-[collapsible=icon]:hidden"
+                onClick={handleLogout}
+                aria-label="Sair"
+              >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
