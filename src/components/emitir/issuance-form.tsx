@@ -21,6 +21,9 @@ import { DataCapture } from './data-capture';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth, db } from '@/lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 const itemSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
@@ -37,9 +40,9 @@ const formSchema = z.object({
   items: z.array(itemSchema).min(1, 'Adicione pelo menos um item.'),
 });
 
-const INVOICES_STORAGE_KEY = 'fiscalflow:invoices';
 
 export function IssuanceForm() {
+  const [user] = useAuthState(auth);
   const { toast } = useToast();
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
@@ -64,27 +67,42 @@ export function IssuanceForm() {
   }, 0);
 
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const newInvoice: Invoice = {
-      id: `nfe-${Date.now()}`,
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if(!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro de autenticação',
+            description: 'Você precisa estar logado para emitir uma nota.',
+        });
+        return;
+    }
+
+    const newInvoice: Omit<Invoice, 'id'> = {
       key: `NFE352407${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
       client: values.destinatario.nome,
       date: new Date().toISOString().split('T')[0],
       status: 'autorizada',
       value: totalValue.toFixed(2).replace('.',','),
+      userId: user.uid,
     }
 
-    const savedInvoices = localStorage.getItem(INVOICES_STORAGE_KEY);
-    const invoices = savedInvoices ? JSON.parse(savedInvoices) : [];
-    const updatedInvoices = [newInvoice, ...invoices];
-    localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(updatedInvoices));
+    try {
+        await addDoc(collection(db, "invoices"), newInvoice);
 
-    toast({
-      title: 'Nota Emitida com Sucesso!',
-      description: 'Sua nota fiscal foi enviada para a SEFAZ e salva no histórico.',
-    });
+        toast({
+          title: 'Nota Emitida com Sucesso!',
+          description: 'Sua nota fiscal foi enviada para a SEFAZ e salva no histórico.',
+        });
 
-    router.push('/notas');
+        router.push('/notas');
+    } catch (error) {
+        console.error("Error adding document: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao emitir nota',
+          description: 'Não foi possível salvar a nota fiscal. Tente novamente.',
+        });
+    }
   }
 
   return (
@@ -219,9 +237,13 @@ export function IssuanceForm() {
         </Card>
         
         <div className="flex justify-end">
-          <Button type="submit" size="lg">
-            <Send className="mr-2 h-4 w-4" />
-            Emitir Nota
+          <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? 'Emitindo...' : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Emitir Nota
+              </>
+            )}
           </Button>
         </div>
       </form>

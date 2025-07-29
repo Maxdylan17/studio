@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,9 @@ import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useState } from 'react';
 
 const formSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -34,6 +38,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,16 +48,29 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Simulação de login
-    console.log(values);
-    toast({
-      title: 'Login realizado com sucesso!',
-      description: 'Você será redirecionado para o dashboard.',
-    });
-    // Em uma aplicação real, aqui você chamaria sua API de autenticação
-    // e, em caso de sucesso, redirecionaria o usuário.
-    router.push('/dashboard');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: 'Login realizado com sucesso!',
+        description: 'Você será redirecionado para o dashboard.',
+      });
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error("Authentication error", error);
+      let description = 'Ocorreu um erro ao tentar fazer login. Tente novamente.';
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = 'E-mail ou senha inválidos. Verifique suas credenciais e tente novamente.'
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Autenticação',
+        description,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -81,6 +99,7 @@ export default function LoginPage() {
                         type="email"
                         placeholder="m@example.com"
                         {...field}
+                        disabled={isLoading}
                       />
                     </FormControl>
                     <FormMessage />
@@ -102,14 +121,14 @@ export default function LoginPage() {
                         </Link>
                       </div>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Entrando...' : 'Login'}
               </Button>
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/signup">Criar uma conta</Link>

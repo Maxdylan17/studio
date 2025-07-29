@@ -29,67 +29,42 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
-import { Download, Mail, Eye } from 'lucide-react';
-
-const mockInvoices: Invoice[] = [
-  {
-    id: '1',
-    key: 'NFE35240700000000000111550010000001231000000123',
-    client: 'Empresa A Soluções',
-    date: '2024-07-20',
-    status: 'autorizada',
-    value: '1.500,00',
-  },
-  {
-    id: '2',
-    key: 'NFE35240700000000000111550010000004561000000456',
-    client: 'Comércio Varejista B',
-    date: '2024-07-19',
-    status: 'cancelada',
-    value: '750,50',
-  },
-  {
-    id: '3',
-    key: 'NFE35240700000000000111550010000007891000000789',
-    client: 'Indústria C Ltda',
-    date: '2024-07-19',
-    status: 'autorizada',
-    value: '12.890,00',
-  },
-  {
-    id: '4',
-    key: 'NFE35240700000000000111550010000009871000000987',
-    client: 'Serviços D Online',
-    date: '2024-07-18',
-    status: 'rascunho',
-    value: '345,00',
-  },
-  {
-    id: '5',
-    key: 'NFE35240700000000000111550010000006541000000654',
-    client: 'Consultoria E',
-    date: '2024-07-17',
-    status: 'autorizada',
-    value: '5.200,75',
-  },
-];
-
-const INVOICES_STORAGE_KEY = 'fiscalflow:invoices';
+import { Download, Mail, Eye, FileText } from 'lucide-react';
+import { auth, db } from '@/lib/firebase';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function NotasPage() {
+  const [user, loadingAuth] = useAuthState(auth);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const savedInvoices = localStorage.getItem(INVOICES_STORAGE_KEY);
-    if (savedInvoices) {
-      setInvoices(JSON.parse(savedInvoices));
-    } else {
-      setInvoices(mockInvoices);
+    const fetchInvoices = async () => {
+       if(user) {
+        setLoadingData(true);
+         try {
+            const q = query(collection(db, "invoices"), where("userId", "==", user.uid), orderBy("date", "desc"));
+            const querySnapshot = await getDocs(q);
+            const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
+            setInvoices(invoicesData);
+         } catch (error) {
+            console.error("Error fetching invoices: ", error);
+            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as notas fiscais.' });
+         } finally {
+            setLoadingData(false);
+         }
+       }
     }
-  }, []);
+    if(!loadingAuth) {
+        fetchInvoices();
+    }
+  }, [user, loadingAuth, toast]);
+
 
   const handleAction = (action: string) => {
     toast({
@@ -97,6 +72,8 @@ export default function NotasPage() {
       description: `Sua solicitação foi processada (Simulação).`,
     });
   };
+
+  const isLoading = loadingAuth || loadingData;
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -122,7 +99,18 @@ export default function NotasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
+              {isLoading ? (
+                Array.from({length: 5}).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-24" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-9 w-28 ml-auto" /></TableCell>
+                    </TableRow>
+                ))
+              ) : invoices.length > 0 ? (
+                invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell>
                     <div className="font-medium">{invoice.client}</div>
@@ -159,7 +147,18 @@ export default function NotasPage() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              ) : (
+                <TableRow>
+                     <TableCell colSpan={5} className="h-24 text-center">
+                         <div className="text-center text-muted-foreground py-12">
+                            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <p className='mb-2 font-medium'>Nenhuma nota fiscal encontrada.</p>
+                            <p className='text-sm'>Vá para a página "Emitir Nota" para criar sua primeira.</p>
+                        </div>
+                     </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

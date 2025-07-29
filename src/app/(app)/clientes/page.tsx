@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, Search } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Search, FileText } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -38,55 +38,27 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { auth, db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 type Client = {
   id: string;
   name: string;
   email: string;
   phone: string;
+  userId: string;
 };
 
-const mockClients: Client[] = [
-  {
-    id: '1',
-    name: 'Tech Solutions Ltda.',
-    email: 'contato@techsolutions.com.br',
-    phone: '(11) 98765-4321',
-  },
-  {
-    id: '2',
-    name: 'Inova Comércio Global',
-    email: 'suporte@inovaglobal.co',
-    phone: '(21) 91234-5678',
-  },
-  {
-    id: '3',
-    name: 'Design Criativo Estúdio',
-    email: 'criativo@design.com',
-    phone: '(31) 99999-8888',
-  },
-  {
-    id: '4',
-    name: 'Consultoria Eficaz',
-    email: 'atendimento@consultoriaeficaz.com',
-    phone: '(41) 98877-6655',
-  },
-  {
-    id: '5',
-    name: 'Mercado Veloz',
-    email: 'financeiro@mercadoveloz.net',
-    phone: '(51) 99654-3210',
-  },
-];
-
-const CLIENTS_STORAGE_KEY = 'fiscalflow:clients';
-
-
 export default function ClientesPage() {
+  const [user, loadingAuth] = useAuthState(auth);
   const [clients, setClients] = React.useState<Client[]>([]);
+  const [loadingData, setLoadingData] = React.useState(true);
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [editingClient, setEditingClient] = React.useState<Client | null>(null);
+  const [editingClient, setEditingClient] = React.useState<Partial<Client> | null>(null);
   const [clientFormData, setClientFormData] = React.useState({
     name: '',
     email: '',
@@ -95,18 +67,27 @@ export default function ClientesPage() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const savedClients = localStorage.getItem(CLIENTS_STORAGE_KEY);
-    if (savedClients) {
-      setClients(JSON.parse(savedClients));
-    } else {
-      setClients(mockClients);
-    }
-  }, []);
+    const fetchClients = async () => {
+      if (user) {
+        setLoadingData(true);
+        try {
+          const q = query(collection(db, "clients"), where("userId", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+          const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
+          setClients(clientsData);
+        } catch (error) {
+          console.error("Error fetching clients: ", error);
+          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar os clientes.' });
+        } finally {
+          setLoadingData(false);
+        }
+      }
+    };
 
-  const persistClients = (updatedClients: Client[]) => {
-    setClients(updatedClients);
-    localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(updatedClients));
-  };
+    if (!loadingAuth) {
+      fetchClients();
+    }
+  }, [user, loadingAuth, toast]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,20 +95,25 @@ export default function ClientesPage() {
     setClientFormData((prev) => ({ ...prev, [id]: value }));
   };
   
-  const handleOpenDialog = (client: Client | null) => {
+  const handleOpenDialog = (client: Partial<Client> | null) => {
     setEditingClient(client);
-    setClientFormData(client ? { ...client } : { name: '', email: '', phone: '' });
+    setClientFormData(client ? { name: client.name || '', email: client.email || '', phone: client.phone || '' } : { name: '', email: '', phone: '' });
     setOpen(true);
   }
 
-  const handleSaveClient = () => {
+  const handleSaveClient = async () => {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para salvar um cliente.' });
+        return;
+    }
     if (clientFormData.name && clientFormData.email && clientFormData.phone) {
-      let updatedClients;
-      if (editingClient) {
+      if (editingClient && editingClient.id) {
         // Edit existing client
-        updatedClients = clients.map((client) =>
+        const clientRef = doc(db, "clients", editingClient.id);
+        await updateDoc(clientRef, clientFormData);
+        setClients(clients.map((client) =>
           client.id === editingClient.id ? { ...client, ...clientFormData } : client
-        );
+        ));
         toast({
           title: 'Cliente Atualizado!',
           description: `${clientFormData.name} foi atualizado com sucesso.`,
@@ -135,24 +121,25 @@ export default function ClientesPage() {
       } else {
         // Add new client
         const newClientData = {
-          id: `client-${Date.now()}`,
           ...clientFormData,
+          userId: user.uid,
         };
-        updatedClients = [...clients, newClientData];
+        const docRef = await addDoc(collection(db, "clients"), newClientData);
+        setClients([...clients, { id: docRef.id, ...newClientData }]);
         toast({
           title: 'Cliente Salvo!',
           description: `${clientFormData.name} foi adicionado à sua lista de clientes.`,
         });
       }
-      persistClients(updatedClients);
       setOpen(false);
       setEditingClient(null);
     }
   };
 
-  const handleDeleteClient = (clientId: string) => {
+  const handleDeleteClient = async (clientId: string) => {
+    await deleteDoc(doc(db, "clients", clientId));
     const updatedClients = clients.filter((client) => client.id !== clientId);
-    persistClients(updatedClients);
+    setClients(updatedClients);
     toast({
         title: 'Cliente Excluído!',
         description: 'O cliente foi removido da sua lista.',
@@ -165,6 +152,8 @@ export default function ClientesPage() {
     client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const isLoading = loadingAuth || loadingData;
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 sm:p-8">
@@ -266,7 +255,16 @@ export default function ClientesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClients.length > 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-64" /></TableCell>
+                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredClients.length > 0 ? (
                 filteredClients.map((client) => (
                     <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
@@ -302,7 +300,11 @@ export default function ClientesPage() {
               ) : (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
-                        Nenhum cliente encontrado.
+                        <div className="text-center text-muted-foreground">
+                            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <p className='mb-2 font-medium'>Nenhum cliente encontrado.</p>
+                            <p className='text-sm'>Adicione um novo cliente para começar.</p>
+                        </div>
                     </TableCell>
                 </TableRow>
               )}

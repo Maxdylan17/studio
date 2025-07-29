@@ -6,4 +6,5 @@ export type Invoice = {
   date: string;
   status: 'autorizada' | 'cancelada' | 'rascunho';
   value: string;
+  userId: string;
 };

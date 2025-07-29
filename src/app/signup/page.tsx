@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,9 @@ import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useState } from 'react';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome é obrigatório'),
@@ -34,6 +38,7 @@ const formSchema = z.object({
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,13 +49,35 @@ export default function SignupPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: 'Conta criada com sucesso!',
-      description: 'Você será redirecionado para o dashboard.',
-    });
-    router.push('/dashboard');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      
+      await updateProfile(userCredential.user, {
+        displayName: values.name,
+      });
+
+      toast({
+        title: 'Conta criada com sucesso!',
+        description: 'Você será redirecionado para o dashboard.',
+      });
+      router.push('/dashboard');
+
+    } catch (error: any) {
+       console.error("Signup error", error);
+       let description = 'Ocorreu um erro ao criar sua conta. Tente novamente.';
+       if(error.code === 'auth/email-already-in-use') {
+        description = 'Este e-mail já está em uso. Tente fazer login.'
+       }
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Criar Conta',
+            description,
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -75,7 +102,7 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input placeholder="Seu nome completo" {...field} />
+                      <Input placeholder="Seu nome completo" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -92,6 +119,7 @@ export default function SignupPage() {
                         type="email"
                         placeholder="m@example.com"
                         {...field}
+                        disabled={isLoading}
                       />
                     </FormControl>
                     <FormMessage />
@@ -105,14 +133,14 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" {...field} disabled={isLoading}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Criar conta
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Criando conta...' : 'Criar conta'}
               </Button>
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/login">Já tenho uma conta</Link>
