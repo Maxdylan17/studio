@@ -37,16 +37,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       return;
     }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        router.push('/login');
-      }
+      setUser(user);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router, isFirebaseConfigured]);
+  }, [isFirebaseConfigured]);
+
+  useEffect(() => {
+    if (!loading && !user && isFirebaseConfigured) {
+      router.push('/login');
+    }
+  }, [user, loading, router, isFirebaseConfigured]);
 
   const handleLogout = async () => {
     try {
@@ -77,7 +79,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (loading) {
+  if (loading || !user) {
      return (
         <div className="flex min-h-svh w-full">
             {/* Skeleton for Sidebar */}
@@ -119,12 +121,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
      )
   }
   
-  // Only render the main app layout if we are done loading AND have a valid user.
-  // This prevents race conditions where child components try to access user data before it's available.
-  if (!user) {
-    return null; // Or return a loading spinner, but null is safer to prevent component mounting.
-  }
-
   return (
     <SidebarProvider>
       <Sidebar>
