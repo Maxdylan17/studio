@@ -227,7 +227,7 @@ export function IssuanceForm() {
             <CardDescription>Adicione os produtos ou serviços prestados.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <SmartIssuance form={form} replace={replace} />
+            <SmartIssuance replaceItems={replace} />
             <Separator className="my-6" />
             {fields.map((field, index) => (
               <div key={field.id} className="grid grid-cols-12 gap-x-4 gap-y-2 items-end">

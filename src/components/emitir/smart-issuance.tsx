@@ -2,21 +2,19 @@
 'use client';
 
 import { useState } from 'react';
-import { UseFormReturn, UseFieldArrayReturn } from 'react-hook-form';
+import { UseFieldArrayReplace } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Wand2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { handleSmartIssuance } from '@/lib/actions';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
 interface SmartIssuanceProps {
-  form: UseFormReturn<any>;
-  replace: UseFieldArrayReturn<any, "items", "id">['replace'];
+  replaceItems: UseFieldArrayReplace<any, "items">;
 }
 
-export function SmartIssuance({ form, replace }: SmartIssuanceProps) {
+export function SmartIssuance({ replaceItems }: SmartIssuanceProps) {
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState('');
   const { toast } = useToast();
@@ -36,8 +34,7 @@ export function SmartIssuance({ form, replace }: SmartIssuanceProps) {
     try {
       const result = await handleSmartIssuance({ description });
       if (result.items && result.items.length > 0) {
-        // A função 'replace' do useFieldArray substitui todos os itens existentes
-        replace(result.items);
+        replaceItems(result.items);
         toast({
           title: 'Itens Gerados com Sucesso!',
           description: 'A lista de itens foi preenchida pela IA.',
