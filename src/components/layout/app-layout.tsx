@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -9,9 +8,6 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { Logo } from './logo';
@@ -22,7 +18,7 @@ import { Button } from '../ui/button';
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
+      <Sidebar collapsible="none">
         <SidebarHeader>
           <Logo />
         </SidebarHeader>

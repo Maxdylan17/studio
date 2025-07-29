@@ -1,4 +1,3 @@
-
 import { IssuanceForm } from "@/components/emitir/issuance-form";
 
 export default function EmitirPage() {
