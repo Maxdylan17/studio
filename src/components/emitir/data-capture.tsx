@@ -62,26 +62,53 @@ export function DataCapture({ form }: DataCaptureProps) {
         const result = await handleSmartDataCapture({ documentDataUri: dataUri, documentType });
         const { extractedData } = result;
         
-        // Populate form fields - adjust field names as necessary
-        if (extractedData.nome) form.setValue('destinatario.nome', extractedData.nome, { shouldValidate: true });
-        if (extractedData.cpf) form.setValue('destinatario.cpf_cnpj', extractedData.cpf, { shouldValidate: true });
-        if (extractedData.numero_cnh) form.setValue('destinatario.cpf_cnpj', extractedData.numero_cnh, { shouldValidate: true });
-        if (extractedData.numero_rg) form.setValue('destinatario.documento_adicional', extractedData.numero_rg, { shouldValidate: true });
+        // Mapeia os campos extraídos para os campos do formulário
+        // A IA pode retornar diferentes nomes de campos, então tratamos os mais comuns.
+        const name = extractedData.nome || extractedData.name || extractedData.NOME;
+        const documentNumber = extractedData.cpf || extractedData.cpf_cnpj || extractedData.CPF || 
+                               extractedData.cnh || extractedData.CNH || 
+                               extractedData.rg || extractedData.RG;
 
-        toast({
-          title: 'Dados Extraídos com Sucesso!',
-          description: 'Os campos do formulário foram preenchidos.',
-        });
-        setOpen(false);
+        if (name) {
+          form.setValue('destinatario.nome', name, { shouldValidate: true });
+        }
+        if (documentNumber) {
+          form.setValue('destinatario.cpf_cnpj', documentNumber, { shouldValidate: true });
+        }
+
+        if(!name && !documentNumber) {
+            toast({
+              variant: 'destructive',
+              title: 'Dados não encontrados',
+              description: 'Não foi possível extrair nome ou documento da imagem. Tente uma imagem mais nítida.',
+            });
+        } else {
+            toast({
+              title: 'Dados Extraídos com Sucesso!',
+              description: 'Os campos do formulário foram preenchidos.',
+            });
+            setOpen(false);
+        }
+
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Erro na Extração',
-          description: 'Não foi possível extrair os dados do documento. Tente novamente.',
+          description: 'Não foi possível extrair os dados do documento. Verifique o console para mais detalhes.',
         });
+        console.error(error);
       } finally {
         setLoading(false);
       }
+    };
+     reader.onerror = (error) => {
+        setLoading(false);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao ler arquivo',
+            description: 'Não foi possível ler o arquivo de imagem.',
+        });
+        console.error(error);
     };
   };
 
@@ -120,7 +147,7 @@ export function DataCapture({ form }: DataCaptureProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={onExtract} disabled={loading}>
+          <Button onClick={onExtract} disabled={loading || !file}>
             {loading ? (
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
             ) : null}

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -25,8 +26,8 @@ export type SmartDataCaptureInput = z.infer<typeof SmartDataCaptureInputSchema>;
 
 const SmartDataCaptureOutputSchema = z.object({
   extractedData: z
-    .record(z.string())
-    .describe('A record of extracted data fields from the document.'),
+    .record(z.string().optional())
+    .describe('A record of extracted data fields from the document. The keys should be in lowercase and without accents, e.g., "nome", "cpf", "rg", "cnh".'),
 });
 export type SmartDataCaptureOutput = z.infer<typeof SmartDataCaptureOutputSchema>;
 
@@ -38,16 +39,22 @@ const prompt = ai.definePrompt({
   name: 'smartDataCapturePrompt',
   input: {schema: SmartDataCaptureInputSchema},
   output: {schema: SmartDataCaptureOutputSchema},
-  prompt: `You are an expert data extraction specialist.
+  prompt: `You are an expert data extraction specialist. Your task is to extract information from a document image and return it as a structured JSON object.
 
-You will use OCR and generative AI to extract data from the provided document image.
+The user has specified that the document type is: {{{documentType}}}.
 
-The document type is: {{{documentType}}}
-
-Extract the relevant data fields from the following document image:
+Analyze the following document image and extract the key information.
 {{media url=documentDataUri}}
 
-Output the extracted data as a JSON object.
+Please extract the following fields if available:
+- Full Name (key: "nome")
+- CPF number (key: "cpf")
+- RG number (key: "rg")
+- CNH number (key: "cnh")
+- Date of Birth (key: "data_nascimento")
+- Filiation/Parents' names (key: "filiacao")
+
+Return the extracted data in a JSON object, using only the specified lowercase keys. If a field is not found, do not include it in the output.
 `,
 });
 
@@ -59,6 +66,9 @@ const smartDataCaptureFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI failed to return valid output.');
+    }
+    return output;
   }
 );
