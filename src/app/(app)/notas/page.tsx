@@ -78,7 +78,7 @@ export default function NotasPage() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h3 className="text-3xl font-bold tracking-tight">Notas Fiscais</h3>
+        <h1 className="text-3xl font-bold tracking-tight">Notas Fiscais</h1>
       </div>
       <Card>
         <CardHeader>

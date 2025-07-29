@@ -1,4 +1,3 @@
-
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -8,12 +7,12 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAuJ6Aue0SJSxRzQ4GaEv7p1iRlythkeL0",
+  authDomain: "fiscalflow-h2lyd.firebaseapp.com",
+  projectId: "fiscalflow-h2lyd",
+  storageBucket: "fiscalflow-h2lyd.firebasestorage.app",
+  messagingSenderId: "337778816271",
+  appId: "1:337778816271:web:b4c448701c86a33c2c3a7a"
 };
 
 // Initialize Firebase
