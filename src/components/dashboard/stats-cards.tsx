@@ -2,32 +2,44 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, BarChart, CheckCircle, XCircle } from 'lucide-react';
 
-export default function StatsCards() {
-  // Mock data
+interface StatsCardsProps {
+    data: {
+        volume: number;
+        averageValue: number;
+        authorized: number;
+        canceled: number;
+        volumeChange: string;
+        averageValueChange: string;
+        authorizedPercentage: string;
+        canceledPercentage: string;
+    }
+}
+
+export default function StatsCards({ data }: StatsCardsProps) {
   const stats = [
     {
       title: 'Volume Total (Mês)',
-      value: '1.234',
+      value: data.volume.toLocaleString('pt-BR'),
       icon: BarChart,
-      description: '+20.1% do último mês',
+      description: data.volumeChange,
     },
     {
       title: 'Valor Médio por Nota',
-      value: 'R$ 456,78',
+      value: data.averageValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
       icon: DollarSign,
-      description: '+180.1% do último mês',
+      description: data.averageValueChange,
     },
     {
       title: 'Notas Autorizadas',
-      value: '1.150',
+      value: data.authorized.toLocaleString('pt-BR'),
       icon: CheckCircle,
-      description: '93% de sucesso',
+      description: data.authorizedPercentage,
     },
     {
       title: 'Notas Canceladas',
-      value: '84',
+      value: data.canceled.toLocaleString('pt-BR'),
       icon: XCircle,
-      description: '7% do total',
+      description: data.canceledPercentage,
     },
   ];
 

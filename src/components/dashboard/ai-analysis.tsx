@@ -16,7 +16,13 @@ import { handleAnalyzeIssuanceTrends } from '@/lib/actions';
 import { Skeleton } from '../ui/skeleton';
 import type { AnalyzeIssuanceTrendsOutput } from '@/ai/flows/analyze-issuance-trends';
 
-export default function AiAnalysis() {
+interface AiAnalysisProps {
+    volume: number;
+    averageValue: number;
+    trends: string;
+}
+
+export default function AiAnalysis({ volume, averageValue, trends }: AiAnalysisProps) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AnalyzeIssuanceTrendsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,14 +32,14 @@ export default function AiAnalysis() {
     setError(null);
     setAnalysis(null);
 
-    const mockInput = {
-      volume: 1234,
-      averageValue: 456.78,
-      trends: 'Aumento consistente nas emissões nos últimos 3 meses, com pico em Julho. Queda de 15% em notas de alto valor no último mês.',
+    const input = {
+      volume,
+      averageValue,
+      trends,
     };
 
     try {
-      const result = await handleAnalyzeIssuanceTrends(mockInput);
+      const result = await handleAnalyzeIssuanceTrends(input);
       setAnalysis(result);
     } catch (e) {
       setError('Ocorreu um erro ao gerar a análise. Tente novamente.');
