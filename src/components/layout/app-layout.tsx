@@ -15,92 +15,9 @@ import { Logo } from './logo';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
-import { signOut, onAuthStateChanged, User } from 'firebase/auth';
-import React, { useEffect, useState } from 'react';
-import { Skeleton } from '../ui/skeleton';
+import React from 'react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast({
-        title: 'Logout Realizado',
-        description: 'Você foi desconectado com segurança.',
-      });
-      router.push('/login');
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro no Logout',
-        description: 'Ocorreu um erro ao tentar sair. Tente novamente.',
-      });
-    }
-  };
-
-  if (loading || !user) {
-     return (
-        <div className="flex min-h-svh w-full">
-            {/* Skeleton for Sidebar */}
-            <div className="hidden md:flex flex-col w-64 border-r p-2 gap-2">
-                <div className="flex items-center gap-2 p-2">
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-6 w-32" />
-                </div>
-                <div className="flex flex-col gap-1 p-2">
-                    <Skeleton className="h-9 w-full" />
-                    <Skeleton className="h-9 w-full" />
-                    <Skeleton className="h-9 w-full" />
-                    <Skeleton className="h-9 w-full" />
-                    <Skeleton className="h-9 w-full" />
-                    <Skeleton className="h-9 w-full" />
-                </div>
-                 <div className="mt-auto flex items-center gap-3 p-2">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="flex flex-col gap-2">
-                        <Skeleton className="h-4 w-24" />
-                         <Skeleton className="h-3 w-32" />
-                    </div>
-                 </div>
-            </div>
-            {/* Skeleton for Main Content */}
-            <div className="flex-1 flex flex-col">
-                 <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-                    <Skeleton className="h-7 w-7" />
-                 </header>
-                 <main className="flex-1 p-4 sm:p-8 pt-6">
-                    <Skeleton className="h-8 w-48 mb-4" />
-                    <div className="space-y-4">
-                        <Skeleton className="h-64 w-full" />
-                        <Skeleton className="h-32 w-full" />
-                    </div>
-                 </main>
-            </div>
-        </div>
-     )
-  }
   
   return (
     <SidebarProvider>
@@ -114,22 +31,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
            <div className="flex items-center gap-3">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={user?.photoURL ?? undefined} alt="Avatar" data-ai-hint="avatar user"/>
-                <AvatarFallback>{user?.displayName?.charAt(0) ?? user?.email?.charAt(0) ?? 'U'}</AvatarFallback>
+                <AvatarImage src={undefined} alt="Avatar" data-ai-hint="avatar user"/>
+                <AvatarFallback>U</AvatarFallback>
               </Avatar>
               <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
-                <span className="font-medium text-sm text-sidebar-foreground truncate">{user?.displayName ?? 'Usuário'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+                <span className="font-medium text-sm text-sidebar-foreground truncate">Usuário</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">Navegação Direta</span>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 ml-auto group-data-[collapsible=icon]:hidden"
-                onClick={handleLogout}
-                aria-label="Sair"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
             </div>
         </SidebarFooter>
       </Sidebar>

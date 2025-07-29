@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-// A raiz do site redireciona para a página de login por padrão.
+// A raiz do site redireciona para a página de dashboard por padrão.
 export default function RootPage() {
-  redirect('/login');
+  redirect('/dashboard');
 }

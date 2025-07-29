@@ -38,9 +38,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import { useAuthState } from 'react-firebase-hooks/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -50,11 +49,12 @@ type Client = {
   email: string;
   phone: string;
   cpf_cnpj: string; // Added this field
-  userId: string;
+  userId: string; // This can be a static value now
 };
 
+const FAKE_USER_ID = "local-user";
+
 export default function ClientesPage() {
-  const [user, loadingAuth] = useAuthState(auth);
   const [clients, setClients] = React.useState<Client[]>([]);
   const [loadingData, setLoadingData] = React.useState(true);
   const [open, setOpen] = React.useState(false);
@@ -70,10 +70,9 @@ export default function ClientesPage() {
 
   React.useEffect(() => {
     const fetchClients = async () => {
-      if (user) {
         setLoadingData(true);
         try {
-          const q = query(collection(db, "clients"), where("userId", "==", user.uid));
+          const q = query(collection(db, "clients"), where("userId", "==", FAKE_USER_ID));
           const querySnapshot = await getDocs(q);
           const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
           setClients(clientsData);
@@ -83,13 +82,10 @@ export default function ClientesPage() {
         } finally {
           setLoadingData(false);
         }
-      }
     };
 
-    if (!loadingAuth) {
-      fetchClients();
-    }
-  }, [user, loadingAuth, toast]);
+    fetchClients();
+  }, [toast]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,10 +100,6 @@ export default function ClientesPage() {
   }
 
   const handleSaveClient = async () => {
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para salvar um cliente.' });
-        return;
-    }
     if (clientFormData.name && clientFormData.email && clientFormData.phone && clientFormData.cpf_cnpj) {
       if (editingClient && editingClient.id) {
         // Edit existing client
@@ -124,7 +116,7 @@ export default function ClientesPage() {
         // Add new client
         const newClientData = {
           ...clientFormData,
-          userId: user.uid,
+          userId: FAKE_USER_ID,
         };
         const docRef = await addDoc(collection(db, "clients"), newClientData);
         setClients([...clients, { id: docRef.id, ...newClientData }]);
@@ -158,7 +150,7 @@ export default function ClientesPage() {
     client.phone.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const isLoading = loadingAuth || loadingData;
+  const isLoading = loadingData;
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 sm:p-8">
@@ -332,5 +324,3 @@ export default function ClientesPage() {
     </div>
   );
 }
-
-    

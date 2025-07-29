@@ -30,14 +30,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
 import { Download, Mail, Eye, FileText } from 'lucide-react';
-import { auth, db } from '@/lib/firebase';
-import { useAuthState } from 'react-firebase-hooks/auth';
+import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const FAKE_USER_ID = "local-user";
 
 export default function NotasPage() {
-  const [user, loadingAuth] = useAuthState(auth);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -45,25 +44,21 @@ export default function NotasPage() {
 
   useEffect(() => {
     const fetchInvoices = async () => {
-       if(user) {
-        setLoadingData(true);
-         try {
-            const q = query(collection(db, "invoices"), where("userId", "==", user.uid), orderBy("date", "desc"));
-            const querySnapshot = await getDocs(q);
-            const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
-            setInvoices(invoicesData);
-         } catch (error) {
-            console.error("Error fetching invoices: ", error);
-            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as notas fiscais.' });
-         } finally {
-            setLoadingData(false);
-         }
-       }
+      setLoadingData(true);
+      try {
+          const q = query(collection(db, "invoices"), where("userId", "==", FAKE_USER_ID), orderBy("date", "desc"));
+          const querySnapshot = await getDocs(q);
+          const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
+          setInvoices(invoicesData);
+      } catch (error) {
+          console.error("Error fetching invoices: ", error);
+          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as notas fiscais.' });
+      } finally {
+          setLoadingData(false);
+      }
     }
-    if(!loadingAuth) {
-        fetchInvoices();
-    }
-  }, [user, loadingAuth, toast]);
+    fetchInvoices();
+  }, [toast]);
 
 
   const handleAction = (action: string) => {
@@ -73,7 +68,7 @@ export default function NotasPage() {
     });
   };
 
-  const isLoading = loadingAuth || loadingData;
+  const isLoading = loadingData;
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">

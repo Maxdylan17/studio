@@ -21,8 +21,7 @@ import { DataCapture } from './data-capture';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -52,8 +51,9 @@ type Client = {
   userId: string;
 };
 
+const FAKE_USER_ID = "local-user";
+
 export function IssuanceForm() {
-  const [user, loadingAuth] = useAuthState(auth);
   const { toast } = useToast();
   const router = useRouter();
   const [clients, setClients] = React.useState<Client[]>([]);
@@ -73,10 +73,9 @@ export function IssuanceForm() {
 
   React.useEffect(() => {
     const fetchClients = async () => {
-      if (user) {
         setLoadingClients(true);
         try {
-          const q = query(collection(db, "clients"), where("userId", "==", user.uid));
+          const q = query(collection(db, "clients"), where("userId", "==", FAKE_USER_ID));
           const querySnapshot = await getDocs(q);
           const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
           setClients(clientsData);
@@ -86,13 +85,10 @@ export function IssuanceForm() {
         } finally {
           setLoadingClients(false);
         }
-      }
     };
 
-    if (!loadingAuth) {
-      fetchClients();
-    }
-  }, [user, loadingAuth, toast]);
+    fetchClients();
+  }, [toast]);
 
 
   const { fields, append, remove } = useFieldArray({
@@ -108,32 +104,20 @@ export function IssuanceForm() {
     const selectedClient = clients.find(c => c.id === clientId);
     if(selectedClient) {
       form.setValue('destinatario.nome', selectedClient.name, { shouldValidate: true });
-      // The client data might have 'cpf_cnpj' or just 'phone' from previous versions. Let's try to get a document number.
-      // Assuming 'phone' might have been used for document in the past, or use a dedicated field.
-      // For this implementation, we will assume client has a 'cpf_cnpj' field now.
-      const clientDoc = selectedClient.cpf_cnpj || ''; // Fallback to empty string
+      const clientDoc = selectedClient.cpf_cnpj || ''; 
       form.setValue('destinatario.cpf_cnpj', clientDoc, { shouldValidate: true });
     }
   }
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if(!user) {
-        toast({
-            variant: 'destructive',
-            title: 'Erro de autenticação',
-            description: 'Você precisa estar logado para emitir uma nota.',
-        });
-        return;
-    }
-
     const newInvoice: Omit<Invoice, 'id'> = {
       key: `NFE352407${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
       client: values.destinatario.nome,
       date: new Date().toISOString().split('T')[0],
       status: 'autorizada',
       value: totalValue.toFixed(2).replace('.',','),
-      userId: user.uid,
+      userId: FAKE_USER_ID,
     }
 
     try {
@@ -325,5 +309,3 @@ export function IssuanceForm() {
     </Form>
   );
 }
-
-    

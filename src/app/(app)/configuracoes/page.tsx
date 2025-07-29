@@ -15,14 +15,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+const FAKE_USER_ID = "local-user";
 
 export default function ConfiguracoesPage() {
   const { toast } = useToast();
-  const [user] = useAuthState(auth);
   const [companyName, setCompanyName] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
@@ -31,9 +30,8 @@ export default function ConfiguracoesPage() {
 
   useEffect(() => {
     const loadSettings = async () => {
-      if (user) {
         setLoading(true);
-        const docRef = doc(db, "settings", user.uid);
+        const docRef = doc(db, "settings", FAKE_USER_ID);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -47,10 +45,9 @@ export default function ConfiguracoesPage() {
           setCnpj('00.000.000/0001-00');
         }
         setLoading(false);
-      }
     };
     loadSettings();
-  }, [user]);
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -59,15 +56,6 @@ export default function ConfiguracoesPage() {
   };
   
   const handleSaveChanges = async () => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Erro de autenticação",
-        description: "Você precisa estar logado para salvar as configurações."
-      });
-      return;
-    }
-    
     const settingsData = {
       companyName,
       cnpj,
@@ -75,7 +63,7 @@ export default function ConfiguracoesPage() {
     };
 
     try {
-      await setDoc(doc(db, "settings", user.uid), settingsData, { merge: true });
+      await setDoc(doc(db, "settings", FAKE_USER_ID), settingsData, { merge: true });
       toast({
           title: "Configurações Salvas!",
           description: "As informações da sua empresa foram atualizadas."

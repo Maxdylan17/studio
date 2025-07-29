@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Download, FileDown, FileText } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -18,8 +17,9 @@ type Report = {
   userId: string;
 };
 
+const FAKE_USER_ID = "local-user";
+
 export default function RelatoriosPage() {
-  const [user, loadingAuth] = useAuthState(auth);
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,10 +27,9 @@ export default function RelatoriosPage() {
   
   useEffect(() => {
     const fetchReports = async () => {
-      if(user) {
         setLoadingData(true);
         try {
-          const q = query(collection(db, 'reports'), where('userId', '==', user.uid), orderBy('generatedAt', 'desc'));
+          const q = query(collection(db, 'reports'), where('userId', '==', FAKE_USER_ID), orderBy('generatedAt', 'desc'));
           const querySnapshot = await getDocs(q);
           const reportsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Report[];
           setReports(reportsData);
@@ -40,19 +39,12 @@ export default function RelatoriosPage() {
         } finally {
           setLoadingData(false);
         }
-      }
     };
-    if(!loadingAuth) {
-      fetchReports();
-    }
-  }, [user, loadingAuth, toast]);
+    fetchReports();
+  }, [toast]);
 
 
   const handleGenerateReport = async () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado.'});
-      return;
-    }
     setIsGenerating(true);
     
     // Simulating report generation delay
@@ -61,7 +53,7 @@ export default function RelatoriosPage() {
     const newReportData = {
       name: `Relatório Fiscal - ${new Date().toLocaleDateString('pt-BR')}`,
       generatedAt: new Date().toISOString(),
-      userId: user.uid
+      userId: FAKE_USER_ID
     };
 
     try {
@@ -92,7 +84,7 @@ export default function RelatoriosPage() {
     });
   }
 
-  const isLoading = loadingAuth || loadingData;
+  const isLoading = loadingData;
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">

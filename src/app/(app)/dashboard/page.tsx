@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatsCards from '@/components/dashboard/stats-cards';
 import TrendsChart from '@/components/dashboard/trends-chart';
 import AiAnalysis from '@/components/dashboard/ai-analysis';
-import { auth, db } from '@/lib/firebase';
-import { useAuthState } from 'react-firebase-hooks/auth';
+import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import type { Invoice } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,8 +42,9 @@ const defaultStats: StatsData = {
   canceledPercentage: '0% do total',
 };
 
+const FAKE_USER_ID = "local-user";
+
 export default function DashboardPage() {
-  const [user, loadingAuth] = useAuthState(auth);
   const [statsData, setStatsData] = useState<StatsData>(defaultStats);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -131,10 +131,9 @@ export default function DashboardPage() {
     };
 
     const fetchInvoices = async () => {
-      if (user) {
         setLoadingData(true);
         try {
-          const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+          const q = query(collection(db, 'invoices'), where('userId', '==', FAKE_USER_ID));
           const querySnapshot = await getDocs(q);
           const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
           if (invoicesData.length > 0) {
@@ -150,15 +149,12 @@ export default function DashboardPage() {
         } finally {
           setLoadingData(false);
         }
-      }
     };
 
-    if (!loadingAuth) {
-      fetchInvoices();
-    }
-  }, [user, loadingAuth]);
+    fetchInvoices();
+  }, []);
 
-  const isLoading = loadingAuth || loadingData;
+  const isLoading = loadingData;
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
