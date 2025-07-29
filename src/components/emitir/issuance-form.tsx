@@ -26,6 +26,7 @@ import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Skeleton } from '../ui/skeleton';
+import { SmartIssuance } from './smart-issuance';
 
 const itemSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
@@ -91,7 +92,7 @@ export function IssuanceForm() {
   }, [toast]);
 
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: 'items',
   });
@@ -141,6 +142,11 @@ export function IssuanceForm() {
 
   return (
     <Form {...form}>
+       <SmartIssuance form={form} replace={replace} />
+       <div className="relative my-6">
+            <Separator />
+            <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-background px-2 text-sm text-muted-foreground">OU PREENCHA MANUALMENTE</span>
+        </div>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
