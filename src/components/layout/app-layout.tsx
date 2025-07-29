@@ -29,9 +29,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   
   // This is a placeholder for a real Firebase config check
-  const isFirebaseConfigured = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'YOUR_API_KEY';
+  const isFirebaseConfigured = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
@@ -42,7 +46,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, isFirebaseConfigured]);
 
   const handleLogout = async () => {
     try {
@@ -67,7 +71,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
         <h1 className="text-2xl font-bold mb-2">Configuração do Firebase Incompleta</h1>
         <p className="text-muted-foreground max-w-md">
-          A configuração do seu projeto Firebase parece estar faltando ou incorreta. Por favor, solicite a configuração do Firebase para habilitar a autenticação e o banco de dados.
+          A configuração do seu projeto Firebase parece estar faltando ou incorreta. Por favor, verifique as variáveis de ambiente NEXT_PUBLIC_FIREBASE_* para habilitar a autenticação e o banco de dados.
         </p>
       </div>
     );
