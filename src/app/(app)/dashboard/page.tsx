@@ -16,6 +16,22 @@ const statsData = {
   canceledPercentage: '7% do total',
 };
 
+// Mock data for the trends chart.
+const chartData = [
+  { month: 'Jan', total: 4230 },
+  { month: 'Fev', total: 3120 },
+  { month: 'Mar', total: 3580 },
+  { month: 'Abr', total: 5780 },
+  { month: 'Mai', total: 4890 },
+  { month: 'Jun', total: 6290 },
+  { month: 'Jul', total: 7340 },
+  { month: 'Ago', total: 6980 },
+  { month: 'Set', total: 6450 },
+  { month: 'Out', total: 7120 },
+  { month: 'Nov', total: 8200 },
+  { month: 'Dez', total: 9500 },
+];
+
 export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -29,7 +45,7 @@ export default function DashboardPage() {
             <CardTitle>Visão Geral de Emissões</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <TrendsChart />
+            <TrendsChart data={chartData} />
           </CardContent>
         </Card>
         <AiAnalysis 
