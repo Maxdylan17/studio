@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileDown, FileText } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
@@ -71,7 +71,7 @@ export default function RelatoriosPage() {
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {reports.map(report => (
                         <Card key={report.id} className="flex flex-col">
-                            <CardHeader className="flex-row items-start gap-4 space-y-0">
+                            <CardHeader className="flex-row items-start gap-4 space-y-0 pb-4">
                                 <div className="flex-shrink-0">
                                     <FileText className="h-8 w-8 text-muted-foreground" />
                                 </div>
@@ -80,18 +80,19 @@ export default function RelatoriosPage() {
                                     <CardDescription>Gerado em: {report.generatedAt}</CardDescription>
                                 </div>
                             </CardHeader>
-                            <CardContent className="mt-auto">
+                            <CardFooter>
                                 <Button className="w-full" variant="secondary" onClick={handleDownload}>
                                     <Download className="mr-2 h-4 w-4" />
                                     Baixar
                                 </Button>
-                            </CardContent>
+                            </CardFooter>
                         </Card>
                     ))}
                 </div>
             ) : (
                  <div className="text-center text-muted-foreground py-12">
-                    <p className='mb-2'>Nenhum relatório gerado ainda.</p>
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <p className='mb-2 font-medium'>Nenhum relatório gerado ainda.</p>
                     <p className='text-sm'>Clique em "Gerar Relatório" para começar.</p>
                 </div>
             )}
