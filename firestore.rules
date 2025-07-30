@@ -1,0 +1,29 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Clients: Only the owner can read, write, create, or delete their own clients.
+    match /clients/{clientId} {
+      allow read, write, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Invoices: Only the owner can read, write, create, or delete their own invoices.
+    match /invoices/{invoiceId} {
+      allow read, write, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    // Settings: A user can only read and write their own settings document, identified by their UID.
+    match /settings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}
