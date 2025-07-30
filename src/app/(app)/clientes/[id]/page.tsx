@@ -180,14 +180,14 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
               <span className="sr-only">Voltar</span>
             </Button>
             <h1 className="flex-1 text-2xl font-bold tracking-tight sm:text-3xl truncate">
-              {isLoading ? <Skeleton className="h-8 w-64" /> : client.name}
+              {isLoading ? <Skeleton className="h-8 w-48 sm:w-64" /> : client.name}
             </h1>
             <div className="flex items-center gap-2">
-                <Button onClick={handleOpenEditDialog} disabled={isLoading}>
+                <Button onClick={handleOpenEditDialog} disabled={isLoading} size="sm">
                     <Edit className="mr-0 h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Editar Cliente</span>
+                    <span className="hidden sm:inline">Editar</span>
                 </Button>
-                <Button onClick={handleDeleteClient} variant="destructive" disabled={isLoading}>
+                <Button onClick={handleDeleteClient} variant="destructive" disabled={isLoading} size="sm">
                     <Trash2 className="mr-0 h-4 w-4 sm:mr-2" />
                      <span className="hidden sm:inline">Excluir</span>
                 </Button>
@@ -196,14 +196,14 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
 
         {/* Client Info Card */}
         <Card>
-            <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+            <CardHeader className="flex flex-col sm:flex-row items-start gap-4 space-y-0">
                 {isLoading ? <Skeleton className="h-24 w-24 rounded-full" /> : (
-                    <Avatar className="h-24 w-24">
+                    <Avatar className="h-24 w-24 border">
                         <AvatarImage src={client.avatarUrl} alt={client.name} data-ai-hint="logo abstract" />
                         <AvatarFallback>{client.name.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                 )}
-                <div className="grid gap-1 text-sm">
+                <div className="grid gap-1 text-sm flex-1">
                     <CardTitle className="text-xl">{isLoading ? <Skeleton className="h-6 w-48" /> : client.name}</CardTitle>
                     {isLoading ? (
                         <div className="space-y-2 pt-1">
@@ -213,7 +213,7 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
                         </div>
                     ) : (
                         <>
-                         <div className="text-muted-foreground">{client.email}</div>
+                         <div className="text-muted-foreground break-all">{client.email}</div>
                          <div className="text-muted-foreground">{client.cpf_cnpj}</div>
                          <div className="text-muted-foreground">{client.phone}</div>
                         </>
@@ -244,7 +244,7 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
                         {isLoading ? (
                            Array.from({ length: 3 }).map((_, i) => (
                              <TableRow key={i}>
-                               <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                               <TableCell><Skeleton className="h-5 w-32 sm:w-48" /></TableCell>
                                <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-24" /></TableCell>
                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
@@ -254,7 +254,7 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
                            invoices.map((invoice) => (
                              <TableRow key={invoice.id}>
                                <TableCell>
-                                 <div className="font-mono text-xs break-all">{invoice.key}</div>
+                                 <div className="font-mono text-xs break-all pr-4">{invoice.key}</div>
                                </TableCell>
                                <TableCell className="hidden sm:table-cell">
                                  <Badge variant={invoice.status === 'autorizada' ? 'default' : invoice.status === 'cancelada' ? 'destructive' : 'secondary'} className="capitalize">
@@ -322,3 +322,4 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
+

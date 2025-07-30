@@ -50,7 +50,7 @@ export default function AiAnalysis({ volume, averageValue, trends, loading: load
   };
 
   return (
-    <Card className="lg:col-span-3">
+    <Card className="lg:col-span-3 md:col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wand2 className="h-5 w-5 text-primary" />
@@ -103,3 +103,4 @@ export default function AiAnalysis({ volume, averageValue, trends, loading: load
     </Card>
   );
 }
+

@@ -249,7 +249,7 @@ export default function ClientesPage() {
       <Card>
         <CardHeader>
             <div className='flex flex-col sm:flex-row justify-between gap-4'>
-                <div>
+                <div className='flex-1'>
                     <CardTitle>Lista de Clientes</CardTitle>
                     <CardDescription>
                         Gerencie seus clientes cadastrados.
@@ -302,7 +302,7 @@ export default function ClientesPage() {
                     <TableRow key={client.id} className="cursor-pointer" onClick={() => handleRowClick(client.id)}>
                     <TableCell className="font-medium">
                         <div className='flex items-center gap-3'>
-                            <Avatar>
+                            <Avatar className="border">
                                 <AvatarImage src={client.avatarUrl} alt={client.name} data-ai-hint="logo abstract"/>
                                 <AvatarFallback>{client.name.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
@@ -360,3 +360,4 @@ export default function ClientesPage() {
     </div>
   );
 }
+

@@ -194,12 +194,12 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
       </div>
       <StatsCards data={statsData} loading={loadingData} />
-      <div className="grid gap-4 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="lg:col-span-4 md:col-span-2">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                  <CardTitle>{metricTitles[selectedMetric]}</CardTitle>
-                 <div className="flex items-center gap-2">
+                 <div className="flex items-center gap-2 flex-wrap">
                     <Button variant={selectedMetric === 'faturamento' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedMetric('faturamento')}>Faturamento</Button>
                     <Button variant={selectedMetric === 'volume' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedMetric('volume')}>Volume</Button>
                     <Button variant={selectedMetric === 'ticketMedio' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedMetric('ticketMedio')}>Ticket Médio</Button>
@@ -229,3 +229,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

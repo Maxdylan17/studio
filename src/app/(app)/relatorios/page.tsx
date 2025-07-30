@@ -55,7 +55,7 @@ export default function RelatoriosPage() {
     
     return (
         <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
-            <div className="flex flex-col items-center justify-center space-y-2 text-center">
+            <div className="flex flex-col items-center justify-center space-y-2 text-center px-4">
                 <BrainCircuit className="h-10 w-10 text-primary" />
                 <h1 className="text-3xl font-bold tracking-tight">Assistente Fiscal IA</h1>
                 <p className="text-muted-foreground max-w-md mx-auto">
@@ -63,11 +63,12 @@ export default function RelatoriosPage() {
                 </p>
             </div>
             
-            <Card className="h-[calc(100vh-16rem)] flex flex-col">
-                <CardContent className="flex-1 p-6 overflow-y-auto space-y-6">
+            <div className="h-[calc(100vh-18rem)] sm:h-[calc(100vh-16rem)] flex flex-col">
+              <Card className="flex-1 flex flex-col">
+                <CardContent className="flex-1 p-2 sm:p-6 overflow-y-auto space-y-6">
                     {messages.length === 0 ? (
-                        <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full">
-                            <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                        <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full p-4">
+                            <MessageSquare className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground/30" />
                             <h3 className="text-lg font-semibold mb-2">Como posso ajudar?</h3>
                             <p className="text-sm max-w-md mx-auto mb-6">Faça perguntas sobre suas notas fiscais, faturas e dados de faturamento.</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl mx-auto">
@@ -75,7 +76,7 @@ export default function RelatoriosPage() {
                                     <Button 
                                         key={prompt}
                                         variant="outline" 
-                                        className="text-center h-auto py-2 whitespace-normal"
+                                        className="text-center h-auto py-2 whitespace-normal text-sm"
                                         onClick={() => handleSendMessage(prompt)}
                                     >
                                         {prompt}
@@ -85,7 +86,7 @@ export default function RelatoriosPage() {
                         </div>
                     ) : (
                         messages.map((message, index) => (
-                            <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                            <div key={index} className={`flex items-start gap-2 sm:gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
                                 {message.role === 'assistant' && (
                                     <div className="bg-primary text-primary-foreground rounded-full p-2 shrink-0">
                                         <Bot className="h-5 w-5" />
@@ -124,7 +125,7 @@ export default function RelatoriosPage() {
                         </div>
                     )}
                 </CardContent>
-                <div className="border-t p-4">
+                <div className="border-t p-2 sm:p-4">
                     <div className="relative">
                         <Input
                             placeholder="Qual o valor da minha última fatura?"
@@ -145,7 +146,9 @@ export default function RelatoriosPage() {
                         </Button>
                     </div>
                 </div>
-            </Card>
+              </Card>
+            </div>
         </div>
     );
 }
+

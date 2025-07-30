@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { ArrowLeft, Send, Trash2, Search } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Search, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice, ExtractedData, Client } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
@@ -174,7 +174,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                            Buscar Cliente Existente
                        </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="p-0" side="bottom" align="start">
+                    <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" side="bottom" align="start">
                         <Command>
                             <CommandInput 
                                 onValueChange={setClientSearchTerm} 
@@ -239,18 +239,22 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
             </Card>
 
             <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Itens da Nota</CardTitle>
+                <Button type="button" size="sm" variant="outline" onClick={() => append({ description: '', quantity: 1, unitPrice: 0 })}>
+                    <PlusCircle className="mr-2 h-4 w-4"/>
+                    Adicionar Item
+                </Button>
             </CardHeader>
             <CardContent className="space-y-4 max-h-[400px] overflow-y-auto p-4">
                 {fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-12 gap-x-4 gap-y-2 items-start p-1">
+                <div key={field.id} className="grid grid-cols-12 gap-x-2 sm:gap-x-4 gap-y-2 items-start p-1">
                     <FormField
                     control={form.control}
                     name={`items.${index}.description`}
                     render={({ field }) => (
                         <FormItem className="col-span-12 sm:col-span-6">
-                        <FormLabel>Descrição</FormLabel>
+                        <FormLabel className="sr-only sm:hidden">Descrição</FormLabel>
                         <FormControl>
                             <Input placeholder="Produto ou serviço" {...field} />
                         </FormControl>
@@ -262,10 +266,10 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                     control={form.control}
                     name={`items.${index}.quantity`}
                     render={({ field }) => (
-                        <FormItem className="col-span-6 sm:col-span-2">
-                        <FormLabel>Qtd.</FormLabel>
+                        <FormItem className="col-span-4 sm:col-span-2">
+                        <FormLabel className="sr-only sm:hidden">Qtd.</FormLabel>
                         <FormControl>
-                            <Input type="number" step="any" {...field} />
+                            <Input type="number" step="any" {...field} placeholder="Qtd." />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -275,8 +279,8 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                     control={form.control}
                     name={`items.${index}.unitPrice`}
                     render={({ field }) => (
-                        <FormItem className="col-span-6 sm:col-span-2">
-                        <FormLabel>Preço Unit.</FormLabel>
+                        <FormItem className="col-span-5 sm:col-span-2">
+                        <FormLabel className="sr-only sm:hidden">Preço Unit.</FormLabel>
                         <FormControl>
                             <Input type="number" step="any" placeholder="R$" {...field} />
                         </FormControl>
@@ -284,7 +288,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                         </FormItem>
                     )}
                     />
-                    <div className="col-span-12 sm:col-span-2 flex justify-end items-end sm:pt-8">
+                    <div className="col-span-3 sm:col-span-2 flex justify-end items-end h-full">
                         <Button
                         type="button"
                         variant="destructive"
@@ -324,3 +328,4 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
     </Form>
   );
 }
+

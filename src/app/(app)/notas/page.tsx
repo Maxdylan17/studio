@@ -193,18 +193,18 @@ export default function NotasPage() {
               {isLoading ? (
                 Array.from({length: 5}).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-24 sm:w-40" /></TableCell>
                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-24" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell className="text-right hidden sm:table-cell"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-9 w-28 ml-auto" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-9 w-24 ml-auto" /></TableCell>
                     </TableRow>
                 ))
               ) : invoices.length > 0 ? (
                 invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell>
-                    <div className="font-medium">{invoice.client}</div>
+                    <div className="font-medium truncate max-w-40 sm:max-w-xs">{invoice.client}</div>
                     <div className="text-sm text-muted-foreground sm:hidden">
                         R$ {invoice.value}
                     </div>
@@ -218,7 +218,6 @@ export default function NotasPage() {
                             ? 'destructive'
                             : 'secondary'
                       }
-                      className="capitalize"
                     >
                       {invoice.status}
                     </Badge>
@@ -305,7 +304,6 @@ export default function NotasPage() {
                             ? 'destructive'
                             : 'secondary'
                       }
-                      className="capitalize"
                     >
                       {selectedInvoice.status}
                     </Badge>
@@ -321,13 +319,13 @@ export default function NotasPage() {
               </div>
             </div>
             <DialogFooter className='flex-col sm:flex-row sm:justify-start gap-2 flex-wrap'>
-              <Button onClick={() => handleAction('Baixar DANFE (PDF)')} variant="secondary">
-                <Download className="mr-2 h-4 w-4" /> Baixar DANFE (PDF)
+              <Button onClick={() => handleAction('Baixar DANFE (PDF)')} variant="secondary" size="sm">
+                <Download className="mr-2 h-4 w-4" /> Baixar DANFE
               </Button>
-              <Button onClick={() => handleAction('Baixar XML')} variant="secondary">
+              <Button onClick={() => handleAction('Baixar XML')} variant="secondary" size="sm">
                 <Download className="mr-2 h-4 w-4" /> Baixar XML
               </Button>
-               <Button onClick={handleOpenEmailDialog} variant="default" disabled={loadingAction === 'email'}>
+               <Button onClick={handleOpenEmailDialog} variant="default" disabled={loadingAction === 'email'} size="sm">
                  {loadingAction === 'email' ? (
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                  ) : (
@@ -387,3 +385,4 @@ export default function NotasPage() {
     </div>
   );
 }
+
