@@ -85,6 +85,13 @@ export async function handleGenerateAndUpdateAvatar(
   input: { clientId: string; name: string; prompt?: string }
 ): Promise<void> {
   try {
+    // Check if the user document exists before generating avatar
+    const clientDoc = await getDoc(doc(db, 'clients', input.clientId));
+    if (!clientDoc.exists()) {
+        console.warn(`Client with id ${input.clientId} does not exist. Skipping avatar generation.`);
+        return;
+    }
+
     const { avatarUrl } = await generateAvatar({ name: input.name, prompt: input.prompt });
     
     if (avatarUrl) {

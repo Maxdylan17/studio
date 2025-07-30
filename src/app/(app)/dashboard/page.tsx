@@ -11,6 +11,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import type { Invoice } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/use-auth';
 
 type StatsData = {
   volume: number;
@@ -56,9 +57,9 @@ const defaultChartData: ChartData = {
     ticketMedio: []
 };
 
-const FAKE_USER_ID = "local-user";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [statsData, setStatsData] = useState<StatsData>(defaultStats);
   const [chartData, setChartData] = useState<ChartData>(defaultChartData);
   const [loadingData, setLoadingData] = useState(true);
@@ -66,6 +67,8 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
+    if (!user) return;
+    
     const processInvoiceData = (invoices: Invoice[]) => {
       const now = new Date();
       const currentMonth = now.getMonth();
@@ -158,7 +161,7 @@ export default function DashboardPage() {
     const fetchInvoices = async () => {
         setLoadingData(true);
         try {
-          const q = query(collection(db, 'invoices'), where('userId', '==', FAKE_USER_ID));
+          const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
           const querySnapshot = await getDocs(q);
           const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
           if (invoicesData.length > 0) {
@@ -177,7 +180,7 @@ export default function DashboardPage() {
     };
 
     fetchInvoices();
-  }, []);
+  }, [user]);
 
   const metricTitles: Record<ChartMetric, string> = {
     faturamento: 'Faturamento Mensal (R$)',

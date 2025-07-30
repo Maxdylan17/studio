@@ -36,8 +36,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { handleGenerateInvoiceEmail } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/use-auth';
 
-const FAKE_USER_ID = "local-user";
 
 type EmailContent = {
   to: string;
@@ -57,12 +57,18 @@ export default function NotasPage() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) {
+        setLoadingData(false);
+        return;
+    }
+
     const fetchInvoices = async () => {
       setLoadingData(true);
       try {
-          const q = query(collection(db, "invoices"), where("userId", "==", FAKE_USER_ID), orderBy("date", "desc"));
+          const q = query(collection(db, "invoices"), where("userId", "==", user.uid), orderBy("date", "desc"));
           const querySnapshot = await getDocs(q);
           const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
           setInvoices(invoicesData);
@@ -74,7 +80,7 @@ export default function NotasPage() {
       }
     }
     fetchInvoices();
-  }, [toast]);
+  }, [user, toast]);
 
 
   const handleAction = (action: string) => {
@@ -90,7 +96,7 @@ export default function NotasPage() {
   }
 
   const handleOpenEmailDialog = async () => {
-    if (!selectedInvoice) return;
+    if (!selectedInvoice || !user) return;
     
     setLoadingAction('email');
     try {
@@ -112,7 +118,7 @@ export default function NotasPage() {
             return;
         }
         
-        const settingsDoc = await getDoc(doc(db, "settings", FAKE_USER_ID));
+        const settingsDoc = await getDoc(doc(db, "settings", user.uid));
         const companyName = settingsDoc.exists() ? settingsDoc.data().companyName : 'Sua Empresa';
 
         const emailData = await handleGenerateInvoiceEmail({

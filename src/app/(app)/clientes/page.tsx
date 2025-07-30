@@ -39,16 +39,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Client } from '@/lib/definitions';
 import { handleGenerateAndUpdateAvatar } from '@/lib/actions';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
-
-
-const FAKE_USER_ID = "local-user";
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ClientesPage() {
   const [clients, setClients] = React.useState<Client[]>([]);
@@ -64,10 +62,16 @@ export default function ClientesPage() {
   });
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useAuth();
 
   React.useEffect(() => {
+    if (!user) {
+      setLoadingData(false);
+      return;
+    };
+    
     setLoadingData(true);
-    const q = query(collection(db, "clients"), where("userId", "==", FAKE_USER_ID));
+    const q = query(collection(db, "clients"), where("userId", "==", user.uid));
     
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
@@ -80,7 +84,7 @@ export default function ClientesPage() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [user, toast]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -94,11 +98,16 @@ export default function ClientesPage() {
   }
 
   const handleSaveClient = async () => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Acesso Negado', description: 'Você precisa estar logado para criar um cliente.' });
+      return;
+    }
+
     if (clientFormData.name && clientFormData.email && clientFormData.phone && clientFormData.cpf_cnpj) {
         // Add new client
         const { avatarPrompt, ...newClientData } = {
           ...clientFormData,
-          userId: FAKE_USER_ID,
+          userId: user.uid,
           avatarUrl: '', // Start with empty avatar
         };
         const docRef = await addDoc(collection(db, "clients"), newClientData);
@@ -106,6 +115,7 @@ export default function ClientesPage() {
           title: 'Cliente Salvo!',
           description: `${clientFormData.name} foi adicionado. Gerando avatar...`,
         });
+        setOpen(false);
 
         // Trigger avatar generation in the background
         handleGenerateAndUpdateAvatar({ clientId: docRef.id, name: newClientData.name, prompt: clientFormData.avatarPrompt || undefined })
@@ -118,7 +128,6 @@ export default function ClientesPage() {
                 });
             });
 
-      setOpen(false);
     } else {
         toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Preencha todos os campos para salvar.' });
     }
@@ -285,7 +294,7 @@ export default function ClientesPage() {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8 rounded-full ml-auto" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredClients.length > 0 ? (
@@ -325,7 +334,7 @@ export default function ClientesPage() {
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => handleRowClick(client.id)}>Ver Detalhes</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteClient(client.id)}>
+                            <DropdownMenuItem onClick={() => handleDeleteClient(client.id)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                             Excluir
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -351,5 +360,3 @@ export default function ClientesPage() {
     </div>
   );
 }
-
-    

@@ -1,6 +1,35 @@
-import { redirect } from 'next/navigation';
 
-// A raiz do site redireciona para a página de dashboard por padrão.
+'use client';
+
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function RootPage() {
-  redirect('/dashboard');
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/login');
+      }
+    }
+  }, [user, loading, router]);
+
+  // Show a loading skeleton while we determine the auth state
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+       <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+            </div>
+        </div>
+    </div>
+  );
 }

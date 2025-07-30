@@ -59,7 +59,7 @@ export default function RelatoriosPage() {
                 <BrainCircuit className="h-10 w-10 text-primary" />
                 <h1 className="text-3xl font-bold tracking-tight">Assistente Fiscal IA</h1>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                    Tire suas dúvidas sobre faturas, pagamentos, clientes e muito mais.
+                    Faça perguntas em linguagem natural sobre seus dados de faturamento.
                 </p>
             </div>
             

@@ -36,7 +36,7 @@ const conversationalAnalysisFlow = ai.defineFlow(
     
     const llmResponse = await ai.generate({
       prompt: `Você é um "Assistente Fiscal" de IA. Sua tarefa é responder a perguntas de clientes sobre suas notas fiscais, faturas e dados de faturamento.
-      Use a ferramenta 'getData' para buscar as informações necessárias para responder à pergunta.
+      Use a ferramenta 'getData' para buscar as informações necessárias para responder à pergunta. A busca é sempre feita no contexto do usuário que está fazendo a pergunta.
       Se a ferramenta retornar um erro ou dados vazios, analise o resultado e informe ao cliente de forma amigável que a informação não foi encontrada, sugerindo que ele reformule a pergunta ou tente outra consulta.
       Seja claro, objetivo e amigável em suas respostas. Use formatação Markdown para apresentar dados como tabelas e listas quando for apropriado.
 

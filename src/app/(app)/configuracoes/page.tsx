@@ -17,11 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-
-const FAKE_USER_ID = "local-user";
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ConfiguracoesPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [companyName, setCompanyName] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
@@ -30,8 +30,9 @@ export default function ConfiguracoesPage() {
 
   useEffect(() => {
     const loadSettings = async () => {
+        if (!user) return;
         setLoading(true);
-        const docRef = doc(db, "settings", FAKE_USER_ID);
+        const docRef = doc(db, "settings", user.uid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -47,7 +48,7 @@ export default function ConfiguracoesPage() {
         setLoading(false);
     };
     loadSettings();
-  }, []);
+  }, [user]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -56,6 +57,10 @@ export default function ConfiguracoesPage() {
   };
   
   const handleSaveChanges = async () => {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Acesso Negado', description: 'Você precisa estar logado para salvar.'});
+        return;
+    }
     const settingsData = {
       companyName,
       cnpj,
@@ -63,7 +68,7 @@ export default function ConfiguracoesPage() {
     };
 
     try {
-      await setDoc(doc(db, "settings", FAKE_USER_ID), settingsData, { merge: true });
+      await setDoc(doc(db, "settings", user.uid), settingsData, { merge: true });
       toast({
           title: "Configurações Salvas!",
           description: "As informações da sua empresa foram atualizadas."

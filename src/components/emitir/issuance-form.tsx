@@ -16,13 +16,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { ArrowLeft, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Invoice, ExtractedData } from '@/lib/definitions';
+import type { Invoice, ExtractedData, Client } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import React from 'react';
+import { collection, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 
 
 const itemSchema = z.object({
@@ -46,11 +49,13 @@ interface IssuanceFormProps {
     onReset: () => void;
 }
 
-const FAKE_USER_ID = "local-user";
-
 export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useAuth();
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [foundClients, setFoundClients] = useState<Client[]>([]);
+  const [openClientSearch, setOpenClientSearch] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,6 +70,33 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
     },
   });
 
+  useEffect(() => {
+    const searchClients = async () => {
+        if (clientSearchTerm.length > 2 && user) {
+             const clientQuery = query(
+                collection(db, "clients"), 
+                where('userId', '==', user.uid),
+                where('name', '>=', clientSearchTerm),
+                where('name', '<=', clientSearchTerm + '\uf8ff'),
+                limit(5)
+            );
+            const clientSnap = await getDocs(clientQuery);
+            setFoundClients(clientSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client)));
+        } else {
+            setFoundClients([]);
+        }
+    }
+    const debounce = setTimeout(searchClients, 300);
+    return () => clearTimeout(debounce);
+  }, [clientSearchTerm, user])
+  
+  const handleSelectClient = (client: Client) => {
+    form.setValue('destinatario.nome', client.name);
+    form.setValue('destinatario.cpf_cnpj', client.cpf_cnpj);
+    form.setValue('destinatario.endereco', ''); // Endereço não está no Client schema
+    form.setValue('destinatario.clientId', client.id);
+    setOpenClientSearch(false);
+  }
 
   const { fields, remove } = useFieldArray({
     control: form.control,
@@ -77,6 +109,11 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado para emitir uma nota.'});
+        return;
+    }
+
     const newInvoice: Omit<Invoice, 'id'> = {
       key: `NFE352407${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
       client: values.destinatario.nome,
@@ -84,7 +121,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
       date: new Date().toISOString().split('T')[0],
       status: 'autorizada',
       value: totalValue.toFixed(2).replace('.',','),
-      userId: FAKE_USER_ID,
+      userId: user.uid,
     }
 
     try {
@@ -130,6 +167,35 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                 <CardTitle>Destinatário</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+                 <Popover open={openClientSearch} onOpenChange={setOpenClientSearch}>
+                    <PopoverTrigger asChild>
+                       <Button variant="outline" className="w-full justify-start">
+                           <Search className="mr-2 h-4 w-4" />
+                           Buscar Cliente Existente
+                       </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0" side="bottom" align="start">
+                        <Command>
+                            <CommandInput 
+                                onValueChange={setClientSearchTerm} 
+                                placeholder="Digite o nome do cliente..."
+                             />
+                            <CommandList>
+                                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                    {foundClients.map(client => (
+                                        <CommandItem key={client.id} onSelect={() => handleSelectClient(client)}>
+                                            {client.name}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                 </Popover>
+
+                 <Separator />
+
                 <FormField
                     control={form.control}
                     name="destinatario.nome"
