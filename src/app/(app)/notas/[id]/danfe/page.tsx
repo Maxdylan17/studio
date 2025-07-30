@@ -58,13 +58,13 @@ export default function DanfePage({ params }: { params: { id: string } }) {
           if (settingsSnap.exists()) {
               const settingsData = settingsSnap.data();
               setCompanySettings({
-                  name: settingsData.companyName || 'FiscalFlow Soluções',
-                  cnpj: settingsData.cnpj || '00.000.000/0001-00'
+                  name: settingsData.companyName || 'Sua Empresa',
+                  cnpj: settingsData.cnpj || 'Seu CNPJ'
               });
           } else {
                setCompanySettings({
-                  name: 'FiscalFlow Soluções',
-                  cnpj: '00.000.000/0001-00'
+                  name: 'Sua Empresa',
+                  cnpj: 'Seu CNPJ'
               });
           }
         }

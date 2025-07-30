@@ -93,7 +93,7 @@ export default function ConfiguracoesPage() {
           <CardHeader>
             <CardTitle>Perfil da Empresa</CardTitle>
             <CardDescription>
-              Gerencie as informações da sua empresa.
+              Gerencie as informações da sua empresa que aparecerão nas notas fiscais.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
