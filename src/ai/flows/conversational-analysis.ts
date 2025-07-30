@@ -47,17 +47,22 @@ const conversationalAnalysisFlow = ai.defineFlow(
 
     const toolResponse = llmResponse.toolRequest();
 
+    // If the model doesn't request a tool, just return its text response.
     if (!toolResponse) {
        return { answer: llmResponse.text() };
     }
     
+    // Execute the tool and get the result.
     const toolResult = await toolResponse.execute();
 
+    // Call the AI again with the data from the tool to formulate a final answer.
     const finalResponse = await ai.generate({
         prompt: `Com base nos dados a seguir, responda à pergunta do cliente de forma clara e amigável.
+        Se os dados estiverem vazios ou indicarem um erro, informe ao cliente de forma útil que a informação não foi encontrada e sugira que ele reformule a pergunta.
 
         Pergunta: "${query}"
-        Dados:
+        
+        Dados Obtidos da Ferramenta:
         ${JSON.stringify(toolResult, null, 2)}
         `,
         model: 'googleai/gemini-1.5-flash-preview',
