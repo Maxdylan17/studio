@@ -37,6 +37,7 @@ const conversationalAnalysisFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       prompt: `Você é um "Assistente Fiscal" de IA. Sua tarefa é responder a perguntas de clientes sobre suas notas fiscais, faturas e dados de faturamento.
       Use a ferramenta 'getData' para buscar as informações necessárias para responder à pergunta.
+      Se a ferramenta retornar um erro ou dados vazios, analise o resultado e informe ao cliente de forma amigável que a informação não foi encontrada, sugerindo que ele reformule a pergunta ou tente outra consulta.
       Seja claro, objetivo e amigável em suas respostas. Use formatação Markdown para apresentar dados como tabelas e listas quando for apropriado.
 
       Pergunta do cliente: "${query}"
@@ -45,30 +46,6 @@ const conversationalAnalysisFlow = ai.defineFlow(
       model: 'googleai/gemini-1.5-flash-preview',
     });
 
-    const toolResponse = llmResponse.toolRequest();
-
-    // If the model doesn't request a tool, just return its text response.
-    if (!toolResponse) {
-       return { answer: llmResponse.text() };
-    }
-    
-    // Execute the tool and get the result.
-    const toolResult = await toolResponse.execute();
-
-    // Call the AI again with the data from the tool to formulate a final answer.
-    const finalResponse = await ai.generate({
-        prompt: `Com base nos dados a seguir, responda à pergunta do cliente de forma clara e amigável.
-        Se os dados estiverem vazios ou indicarem um erro, informe ao cliente de forma útil que a informação não foi encontrada e sugira que ele reformule a pergunta.
-
-        Pergunta: "${query}"
-        
-        Dados Obtidos da Ferramenta:
-        ${JSON.stringify(toolResult, null, 2)}
-        `,
-        model: 'googleai/gemini-1.5-flash-preview',
-    });
-
-
-    return { answer: finalResponse.text() };
+    return { answer: llmResponse.text() };
   }
 );
