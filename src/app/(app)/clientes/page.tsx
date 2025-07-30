@@ -44,6 +44,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Client } from '@/lib/definitions';
 import { handleGenerateAndUpdateAvatar } from '@/lib/actions';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const FAKE_USER_ID = "local-user";
@@ -58,7 +59,8 @@ export default function ClientesPage() {
     name: '',
     email: '',
     phone: '',
-    cpf_cnpj: ''
+    cpf_cnpj: '',
+    avatarPrompt: ''
   });
   const { toast } = useToast();
 
@@ -82,14 +84,14 @@ export default function ClientesPage() {
   }, [toast]);
 
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setClientFormData((prev) => ({ ...prev, [id]: value }));
   };
   
   const handleOpenDialog = (client: Partial<Client> | null) => {
     setEditingClient(client);
-    setClientFormData(client ? { name: client.name || '', email: client.email || '', phone: client.phone || '', cpf_cnpj: client.cpf_cnpj || '' } : { name: '', email: '', phone: '', cpf_cnpj: '' });
+    setClientFormData(client ? { name: client.name || '', email: client.email || '', phone: client.phone || '', cpf_cnpj: client.cpf_cnpj || '', avatarPrompt: '' } : { name: '', email: '', phone: '', cpf_cnpj: '', avatarPrompt: '' });
     setOpen(true);
   }
 
@@ -98,14 +100,33 @@ export default function ClientesPage() {
       if (editingClient && editingClient.id) {
         // Edit existing client
         const clientRef = doc(db, "clients", editingClient.id);
-        await updateDoc(clientRef, clientFormData);
+        const { avatarPrompt, ...updateData } = clientFormData;
+        await updateDoc(clientRef, updateData);
         toast({
           title: 'Cliente Atualizado!',
           description: `${clientFormData.name} foi atualizado com sucesso.`,
         });
+
+        // Optionally re-generate avatar on edit if prompt is provided
+        if (clientFormData.avatarPrompt) {
+            toast({
+              title: 'Gerando novo avatar...',
+              description: 'O avatar está sendo atualizado com sua descrição.',
+            });
+            handleGenerateAndUpdateAvatar({ clientId: editingClient.id, name: clientFormData.name, prompt: clientFormData.avatarPrompt })
+            .catch(error => {
+                console.error("Failed to re-generate avatar:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro no Avatar',
+                    description: 'Não foi possível gerar o novo avatar.',
+                });
+            });
+        }
+
       } else {
         // Add new client
-        const newClientData = {
+        const { avatarPrompt, ...newClientData } = {
           ...clientFormData,
           userId: FAKE_USER_ID,
           avatarUrl: '', // Start with empty avatar
@@ -117,7 +138,7 @@ export default function ClientesPage() {
         });
 
         // Trigger avatar generation in the background
-        handleGenerateAndUpdateAvatar({ clientId: docRef.id, name: newClientData.name })
+        handleGenerateAndUpdateAvatar({ clientId: docRef.id, name: newClientData.name, prompt: clientFormData.avatarPrompt || undefined })
             .catch(error => {
                 console.error("Failed to generate avatar:", error);
                 toast({
@@ -172,55 +193,68 @@ export default function ClientesPage() {
                 </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                    Nome
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                      Nome
+                      </Label>
+                      <Input
+                      id="name"
+                      value={clientFormData.name}
+                      onChange={handleInputChange}
+                      placeholder="Empresa Exemplo"
+                      className="col-span-3"
+                      />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="email" className="text-right">
+                      E-mail
+                      </Label>
+                      <Input
+                      id="email"
+                      type="email"
+                      value={clientFormData.email}
+                      onChange={handleInputChange}
+                      placeholder="contato@exemplo.com"
+                      className="col-span-3"
+                      />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="cpf_cnpj" className="text-right">
+                      CPF/CNPJ
+                      </Label>
+                      <Input
+                      id="cpf_cnpj"
+                      value={clientFormData.cpf_cnpj}
+                      onChange={handleInputChange}
+                      placeholder="00.000.000/0001-00"
+                      className="col-span-3"
+                      />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="phone" className="text-right">
+                      Telefone
+                      </Label>
+                      <Input
+                      id="phone"
+                      value={clientFormData.phone}
+                      onChange={handleInputChange}
+                      placeholder="(11) 99999-9999"
+                      className="col-span-3"
+                      />
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="avatarPrompt" className="text-right pt-2">
+                        Avatar <span className="text-xs text-muted-foreground">(IA)</span>
                     </Label>
-                    <Input
-                    id="name"
-                    value={clientFormData.name}
-                    onChange={handleInputChange}
-                    placeholder="Empresa Exemplo"
-                    className="col-span-3"
+                    <Textarea
+                        id="avatarPrompt"
+                        value={clientFormData.avatarPrompt}
+                        onChange={handleInputChange}
+                        placeholder={editingClient ? "Descreva um novo avatar para ser gerado." : "Opcional: Descreva o logo. Ex: um foguete decolando."}
+                        className="col-span-3"
+                        rows={2}
                     />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                    E-mail
-                    </Label>
-                    <Input
-                    id="email"
-                    type="email"
-                    value={clientFormData.email}
-                    onChange={handleInputChange}
-                    placeholder="contato@exemplo.com"
-                    className="col-span-3"
-                    />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="cpf_cnpj" className="text-right">
-                    CPF/CNPJ
-                    </Label>
-                    <Input
-                    id="cpf_cnpj"
-                    value={clientFormData.cpf_cnpj}
-                    onChange={handleInputChange}
-                    placeholder="00.000.000/0001-00"
-                    className="col-span-3"
-                    />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="phone" className="text-right">
-                    Telefone
-                    </Label>
-                    <Input
-                    id="phone"
-                    value={clientFormData.phone}
-                    onChange={handleInputChange}
-                    placeholder="(11) 99999-9999"
-                    className="col-span-3"
-                    />
-                </div>
+                  </div>
                 </div>
                 <DialogFooter>
                 <Button type="submit" onClick={handleSaveClient}>

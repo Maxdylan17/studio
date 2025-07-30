@@ -80,10 +80,10 @@ export async function handleConversationalAnalysis(
 
 
 export async function handleGenerateAndUpdateAvatar(
-  input: { clientId: string; name: string }
+  input: { clientId: string; name: string; prompt?: string }
 ): Promise<void> {
   try {
-    const { avatarUrl } = await generateAvatar({ name: input.name });
+    const { avatarUrl } = await generateAvatar({ name: input.name, prompt: input.prompt });
     
     if (avatarUrl) {
       const clientRef = doc(db, 'clients', input.clientId);
