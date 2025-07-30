@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Separator } from '../ui/separator';
 import { ArrowLeft, Send, Trash2, Search, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Invoice, ExtractedData, Client } from '@/lib/definitions';
+import type { Invoice, ExtractedData, Client, InvoiceItem } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
@@ -93,7 +93,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
   const handleSelectClient = (client: Client) => {
     form.setValue('destinatario.nome', client.name);
     form.setValue('destinatario.cpf_cnpj', client.cpf_cnpj);
-    form.setValue('destinatario.endereco', ''); // Endereço não está no Client schema
+    form.setValue('destinatario.endereco', client.email); // Usando email como placeholder de endereço
     form.setValue('destinatario.clientId', client.id);
     setOpenClientSearch(false);
   }
@@ -122,17 +122,18 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
       status: 'autorizada',
       value: totalValue.toFixed(2).replace('.',','),
       userId: user.uid,
+      items: values.items
     }
 
     try {
-        await addDoc(collection(db, "invoices"), newInvoice);
+        const docRef = await addDoc(collection(db, "invoices"), newInvoice);
 
         toast({
           title: 'Nota Emitida com Sucesso!',
           description: 'Sua nota fiscal foi enviada para a SEFAZ e salva no histórico.',
         });
 
-        router.push('/notas');
+        router.push(`/notas/${docRef.id}/danfe`);
     } catch (error) {
         console.error("Error adding document: ", error);
         toast({
@@ -227,9 +228,9 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                 name="destinatario.endereco"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Endereço (Opcional)</FormLabel>
+                    <FormLabel>Endereço / E-mail</FormLabel>
                     <FormControl>
-                        <Input placeholder="Rua, Número, Bairro, Cidade - Estado" {...field} />
+                        <Input placeholder="Rua, Número, Bairro / email@exemplo.com" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -328,4 +329,3 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
     </Form>
   );
 }
-

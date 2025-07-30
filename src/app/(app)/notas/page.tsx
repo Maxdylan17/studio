@@ -29,15 +29,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
-import { Download, Mail, Eye, FileText, RefreshCw, Send, X } from 'lucide-react';
+import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, getDoc, doc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleGenerateInvoiceEmail } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 type EmailContent = {
@@ -61,36 +72,45 @@ export default function NotasPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
+  const fetchInvoices = async () => {
     if (!user) {
         setLoadingData(false);
         return;
     }
-
-    const fetchInvoices = async () => {
-      setLoadingData(true);
-      try {
-          const q = query(collection(db, "invoices"), where("userId", "==", user.uid), orderBy("date", "desc"));
-          const querySnapshot = await getDocs(q);
-          const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
-          setInvoices(invoicesData);
-      } catch (error) {
-          console.error("Error fetching invoices: ", error);
-          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as notas fiscais.' });
-      } finally {
-          setLoadingData(false);
-      }
+    setLoadingData(true);
+    try {
+        const q = query(collection(db, "invoices"), where("userId", "==", user.uid), orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
+        const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
+        setInvoices(invoicesData);
+    } catch (error) {
+        console.error("Error fetching invoices: ", error);
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as notas fiscais.' });
+    } finally {
+        setLoadingData(false);
     }
+  }
+
+  useEffect(() => {
     fetchInvoices();
-  }, [user, toast]);
+  }, [user]);
 
 
-  const handleAction = (action: string) => {
-    toast({
-      title: `Ação: ${action}`,
-      description: `Sua solicitação foi processada (Simulação).`,
-    });
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    setLoadingAction(`delete-${invoiceId}`);
+    try {
+      await deleteDoc(doc(db, "invoices", invoiceId));
+      toast({ title: 'Nota Fiscal Excluída!', description: 'A nota foi removida do seu histórico.' });
+      fetchInvoices(); // Re-fetch invoices to update the list
+      setDetailsDialogOpen(false); // Close dialog if open
+    } catch (error) {
+      console.error("Error deleting invoice: ", error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir a nota fiscal.' });
+    } finally {
+      setLoadingAction(null);
+    }
   };
+
   
   const handleOpenDanfe = (invoiceId: string) => {
     window.open(`/notas/${invoiceId}/danfe`, '_blank');
@@ -324,21 +344,42 @@ export default function NotasPage() {
                 </span>
               </div>
             </div>
-            <DialogFooter className='flex-col sm:flex-row sm:justify-start gap-2 flex-wrap'>
-              <Button onClick={() => handleOpenDanfe(selectedInvoice.id)} variant="secondary" size="sm">
-                <Download className="mr-2 h-4 w-4" /> Baixar DANFE
-              </Button>
-              <Button onClick={() => handleAction('Baixar XML')} variant="secondary" size="sm">
-                <Download className="mr-2 h-4 w-4" /> Baixar XML
-              </Button>
-               <Button onClick={handleOpenEmailDialog} variant="default" disabled={loadingAction === 'email'} size="sm">
-                 {loadingAction === 'email' ? (
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                 ) : (
-                    <Mail className="mr-2 h-4 w-4" />
-                 )}
-                 {loadingAction === 'email' ? 'Gerando...' : 'Enviar por E-mail'}
-              </Button>
+            <DialogFooter className='flex-col-reverse items-stretch gap-2 sm:flex-row sm:justify-between'>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full sm:w-auto" disabled={loadingAction === `delete-${selectedInvoice.id}`}>
+                        {loadingAction === `delete-${selectedInvoice.id}` ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a nota fiscal
+                        dos servidores.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteInvoice(selectedInvoice.id)}>Confirmar</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end flex-wrap">
+                    <Button onClick={() => handleOpenDanfe(selectedInvoice.id)} variant="secondary" size="sm">
+                        <Download className="mr-2 h-4 w-4" /> Baixar DANFE
+                    </Button>
+                    <Button onClick={handleOpenEmailDialog} variant="default" disabled={loadingAction === 'email'} size="sm">
+                        {loadingAction === 'email' ? (
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                        <Mail className="mr-2 h-4 w-4" />
+                        )}
+                        {loadingAction === 'email' ? 'Gerando...' : 'Enviar por E-mail'}
+                    </Button>
+                </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -1,4 +1,10 @@
 
+export type InvoiceItem = {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+}
+
 export type Invoice = {
   id: string;
   key: string;
@@ -8,6 +14,7 @@ export type Invoice = {
   status: 'autorizada' | 'cancelada' | 'rascunho';
   value: string;
   userId: string;
+  items: InvoiceItem[];
 };
 
 export type Client = {
@@ -19,12 +26,6 @@ export type Client = {
   userId: string;
   avatarUrl?: string;
 };
-
-export type InvoiceItem = {
-    description: string;
-    quantity: number;
-    unitPrice: number;
-}
 
 export type ExtractedData = {
     recipient: {

@@ -11,38 +11,39 @@ import { Printer, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
-
-// Mock data for items as it's not stored in the Invoice document
-const mockItems: InvoiceItem[] = [
-    { description: 'Consultoria de Software - 10 horas', quantity: 1, unitPrice: 1500.00 },
-    { description: 'Desenvolvimento de Módulo de Relatórios', quantity: 1, unitPrice: 2500.00 },
-];
+import { useAuth } from '@/hooks/use-auth';
 
 export default function DanfePage({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = React.useState<Invoice | null>(null);
   const [client, setClient] = React.useState<Client | null>(null);
+  const [companySettings, setCompanySettings] = React.useState<{ name: string; cnpj: string } | null>(null);
+  const [items, setItems] = React.useState<InvoiceItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useAuth();
 
   React.useEffect(() => {
-    if (!params.id) return;
+    if (!params.id || !user) return;
 
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch Invoice
         const invoiceRef = doc(db, 'invoices', params.id);
         const invoiceSnap = await getDoc(invoiceRef);
 
-        if (!invoiceSnap.exists()) {
-          toast({ variant: 'destructive', title: 'Erro', description: 'Nota Fiscal não encontrada.' });
-          setLoading(false);
+        if (!invoiceSnap.exists() || invoiceSnap.data().userId !== user.uid) {
+          toast({ variant: 'destructive', title: 'Erro', description: 'Nota Fiscal não encontrada ou não pertence a você.' });
+          router.push('/notas');
           return;
         }
         
         const invoiceData = { id: invoiceSnap.id, ...invoiceSnap.data() } as Invoice;
         setInvoice(invoiceData);
+        setItems(invoiceData.items || []);
 
+        // Fetch Client
         if (invoiceData.clientId) {
           const clientRef = doc(db, 'clients', invoiceData.clientId);
           const clientSnap = await getDoc(clientRef);
@@ -50,6 +51,23 @@ export default function DanfePage({ params }: { params: { id: string } }) {
             setClient({ id: clientSnap.id, ...clientSnap.data() } as Client);
           }
         }
+
+        // Fetch Company Settings
+        const settingsRef = doc(db, 'settings', user.uid);
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+            const settingsData = settingsSnap.data();
+            setCompanySettings({
+                name: settingsData.companyName || 'FiscalFlow Soluções',
+                cnpj: settingsData.cnpj || '00.000.000/0001-00'
+            });
+        } else {
+             setCompanySettings({
+                name: 'FiscalFlow Soluções',
+                cnpj: '00.000.000/0001-00'
+            });
+        }
+
       } catch (error) {
         console.error('Error fetching DANFE data:', error);
         toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar os dados da nota.' });
@@ -58,14 +76,14 @@ export default function DanfePage({ params }: { params: { id: string } }) {
       }
     };
     fetchData();
-  }, [params.id, toast]);
+  }, [params.id, toast, user, router]);
 
   const handlePrint = () => {
     window.print();
   };
 
   const isLoading = loading || !invoice;
-  const totalValue = mockItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+  const totalValue = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
 
   return (
     <div className="bg-background min-h-screen p-4 sm:p-8">
@@ -82,6 +100,10 @@ export default function DanfePage({ params }: { params: { id: string } }) {
             left: 0;
             top: 0;
             width: 100%;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
           }
           .no-print {
             display: none;
@@ -114,9 +136,9 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                     {/* Header */}
                     <header className="flex justify-between items-start pb-4 border-b">
                         <div>
-                            <h2 className="text-2xl font-bold">FiscalFlow Soluções</h2>
+                            <h2 className="text-2xl font-bold">{companySettings?.name}</h2>
                             <p className="text-muted-foreground">Rua da Tecnologia, 123 - Tecnovale, SP</p>
-                            <p className="text-muted-foreground">CNPJ: 00.000.000/0001-00</p>
+                            <p className="text-muted-foreground">CNPJ: {companySettings?.cnpj}</p>
                         </div>
                         <div className="text-right">
                             <h3 className="text-lg font-bold">DANFE</h3>
@@ -147,33 +169,36 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                             </div>
                         </div>
                     </section>
-
+                    
                     {/* Items */}
-                    <section>
-                         <h4 className="font-semibold mb-2 text-base">Produtos / Serviços</h4>
-                         <div className="border rounded-md">
-                            <table className="w-full">
-                                <thead className="bg-muted">
-                                    <tr className="border-b">
-                                        <th className="p-2 text-left font-medium">Descrição</th>
-                                        <th className="p-2 w-24 text-center font-medium">Qtd.</th>
-                                        <th className="p-2 w-32 text-right font-medium">Valor Unit.</th>
-                                        <th className="p-2 w-32 text-right font-medium">Valor Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {mockItems.map((item, index) => (
-                                        <tr key={index} className="border-b last:border-none">
-                                            <td className="p-2">{item.description}</td>
-                                            <td className="p-2 text-center">{item.quantity}</td>
-                                            <td className="p-2 text-right">{item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td className="p-2 text-right">{(item.quantity * item.unitPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    {items && items.length > 0 && (
+                        <section>
+                            <h4 className="font-semibold mb-2 text-base">Produtos / Serviços</h4>
+                            <div className="border rounded-md">
+                                <table className="w-full">
+                                    <thead className="bg-muted">
+                                        <tr className="border-b">
+                                            <th className="p-2 text-left font-medium">Descrição</th>
+                                            <th className="p-2 w-24 text-center font-medium">Qtd.</th>
+                                            <th className="p-2 w-32 text-right font-medium">Valor Unit.</th>
+                                            <th className="p-2 w-32 text-right font-medium">Valor Total</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                         </div>
-                    </section>
+                                    </thead>
+                                    <tbody>
+                                        {items.map((item, index) => (
+                                            <tr key={index} className="border-b last:border-none">
+                                                <td className="p-2">{item.description}</td>
+                                                <td className="p-2 text-center">{item.quantity}</td>
+                                                <td className="p-2 text-right">{item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                                <td className="p-2 text-right">{(item.quantity * item.unitPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    )}
+
 
                     {/* Footer */}
                     <footer className="pt-4">
