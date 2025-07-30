@@ -10,8 +10,8 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import type { Invoice } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
-// Define the structure for our processed stats
 type StatsData = {
   volume: number;
   averageValue: number;
@@ -24,11 +24,19 @@ type StatsData = {
   canceledPercentage: string;
 };
 
-// Define the structure for chart data points
-type ChartData = {
+type ChartDataPoint = {
   month: string;
-  total: number;
+  'Ano Atual': number;
+  'Ano Anterior': number;
 };
+
+type ChartData = {
+  faturamento: ChartDataPoint[];
+  volume: ChartDataPoint[];
+  ticketMedio: ChartDataPoint[];
+};
+
+type ChartMetric = keyof ChartData;
 
 const defaultStats: StatsData = {
   volume: 0,
@@ -42,12 +50,20 @@ const defaultStats: StatsData = {
   canceledPercentage: '0% do total',
 };
 
+const defaultChartData: ChartData = {
+    faturamento: [],
+    volume: [],
+    ticketMedio: []
+};
+
 const FAKE_USER_ID = "local-user";
 
 export default function DashboardPage() {
   const [statsData, setStatsData] = useState<StatsData>(defaultStats);
-  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [chartData, setChartData] = useState<ChartData>(defaultChartData);
   const [loadingData, setLoadingData] = useState(true);
+  const [selectedMetric, setSelectedMetric] = useState<ChartMetric>('faturamento');
+
 
   useEffect(() => {
     const processInvoiceData = (invoices: Invoice[]) => {
@@ -60,7 +76,6 @@ export default function DashboardPage() {
       const lastMonth = oneMonthAgo.getMonth();
       const lastMonthYear = oneMonthAgo.getFullYear();
 
-      // Filter invoices for the current and previous month
       const currentMonthInvoices = invoices.filter(inv => {
         const invDate = new Date(inv.date);
         return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
@@ -70,56 +85,66 @@ export default function DashboardPage() {
         return invDate.getMonth() === lastMonth && invDate.getFullYear() === lastMonthYear;
       });
 
-      // Calculate stats
       const volume = currentMonthInvoices.length;
-      const totalValue = invoices.reduce((acc, inv) => acc + parseFloat(inv.value.replace(',', '.')), 0);
-      const averageValue = invoices.length > 0 ? totalValue / invoices.length : 0;
+      const totalValueCurrentMonth = currentMonthInvoices.reduce((acc, inv) => acc + parseFloat(inv.value.replace(',', '.')), 0);
+      const averageValueCurrentMonth = volume > 0 ? totalValueCurrentMonth / volume : 0;
       const authorized = invoices.filter(inv => inv.status === 'autorizada').length;
       const canceled = invoices.filter(inv => inv.status === 'cancelada').length;
       
-      // Calculate percentages
       const volumeChange = lastMonthInvoices.length > 0 ? ((volume - lastMonthInvoices.length) / lastMonthInvoices.length) * 100 : volume > 0 ? 100 : 0;
       const lastMonthTotalValue = lastMonthInvoices.reduce((acc, inv) => acc + parseFloat(inv.value.replace(',', '.')), 0);
       const lastMonthAverageValue = lastMonthInvoices.length > 0 ? lastMonthTotalValue / lastMonthInvoices.length : 0;
-      const averageValueChange = lastMonthAverageValue > 0 ? ((averageValue - lastMonthAverageValue) / lastMonthAverageValue) * 100 : averageValue > 0 ? 100 : 0;
+      const averageValueChange = lastMonthAverageValue > 0 ? ((averageValueCurrentMonth - lastMonthAverageValue) / lastMonthAverageValue) * 100 : averageValueCurrentMonth > 0 ? 100 : 0;
       
       const totalInvoices = invoices.length;
       const authorizedPercentage = totalInvoices > 0 ? (authorized / totalInvoices) * 100 : 0;
       const canceledPercentage = totalInvoices > 0 ? (canceled / totalInvoices) * 100 : 0;
 
-      // Prepare data for the chart (last 12 months)
-      const monthlyTotals: { [key: string]: number } = {};
-      const monthLabels = [];
-      for(let i = 11; i >= 0; i--) {
-        const d = new Date(currentYear, currentMonth - i, 1);
-        const year = d.getFullYear();
-        const month = d.getMonth();
-        const label = d.toLocaleString('default', { month: 'short' });
-        monthLabels.push(label);
-        monthlyTotals[`${year}-${month}`] = 0;
-      }
+      const monthlyData: { [year: string]: { [month: string]: { total: number; count: number } } } = {};
+      const monthLabels = Array.from({length: 12}, (_, i) => {
+          const d = new Date(0);
+          d.setMonth(i);
+          return d.toLocaleString('default', { month: 'short' });
+      });
+
       invoices.forEach(inv => {
         const invDate = new Date(inv.date);
         const year = invDate.getFullYear();
         const month = invDate.getMonth();
-        const key = `${year}-${month}`;
-        if(key in monthlyTotals) {
-          monthlyTotals[key] += parseFloat(inv.value.replace(',', '.'));
+        if(year >= currentYear - 1) {
+            if (!monthlyData[year]) monthlyData[year] = {};
+            if (!monthlyData[year][month]) monthlyData[year][month] = { total: 0, count: 0 };
+            monthlyData[year][month].total += parseFloat(inv.value.replace(',', '.'));
+            monthlyData[year][month].count += 1;
         }
       });
-      const newChartData = monthLabels.map((label, i) => {
-         const d = new Date(currentYear, currentMonth - (11-i), 1);
-         const year = d.getFullYear();
-         const month = d.getMonth();
-         return { month: label, total: monthlyTotals[`${year}-${month}`] || 0 };
+      
+      const newFaturamentoData: ChartDataPoint[] = [];
+      const newVolumeData: ChartDataPoint[] = [];
+      const newTicketMedioData: ChartDataPoint[] = [];
+
+      monthLabels.forEach((label, monthIndex) => {
+        const currentYearData = monthlyData[currentYear]?.[monthIndex] || { total: 0, count: 0 };
+        const previousYearData = monthlyData[currentYear - 1]?.[monthIndex] || { total: 0, count: 0 };
+        
+        newFaturamentoData.push({ month: label, 'Ano Atual': currentYearData.total, 'Ano Anterior': previousYearData.total });
+        newVolumeData.push({ month: label, 'Ano Atual': currentYearData.count, 'Ano Anterior': previousYearData.count });
+        newTicketMedioData.push({ 
+            month: label, 
+            'Ano Atual': currentYearData.count > 0 ? currentYearData.total / currentYearData.count : 0, 
+            'Ano Anterior': previousYearData.count > 0 ? previousYearData.total / previousYearData.count : 0 
+        });
       });
       
-      setChartData(newChartData);
+      setChartData({
+        faturamento: newFaturamentoData,
+        volume: newVolumeData,
+        ticketMedio: newTicketMedioData
+      });
 
-      // Set all stats
       setStatsData({
         volume,
-        averageValue,
+        averageValue: averageValueCurrentMonth,
         authorized,
         canceled,
         trends: `Volume de emissões ${volumeChange >= 0 ? 'cresceu' : 'diminuiu'} em ${Math.abs(volumeChange).toFixed(1)}% este mês.`,
@@ -140,12 +165,12 @@ export default function DashboardPage() {
             processInvoiceData(invoicesData);
           } else {
              setStatsData(defaultStats);
-             setChartData([]);
+             setChartData(defaultChartData);
           }
         } catch (error) {
           console.error('Error fetching invoices for dashboard:', error);
           setStatsData(defaultStats);
-          setChartData([]);
+          setChartData(defaultChartData);
         } finally {
           setLoadingData(false);
         }
@@ -153,6 +178,12 @@ export default function DashboardPage() {
 
     fetchInvoices();
   }, []);
+
+  const metricTitles: Record<ChartMetric, string> = {
+    faturamento: 'Faturamento Mensal (R$)',
+    volume: 'Volume de Notas (Unidades)',
+    ticketMedio: 'Ticket Médio (R$)',
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
@@ -163,7 +194,14 @@ export default function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Visão Geral de Emissões</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                 <CardTitle>{metricTitles[selectedMetric]}</CardTitle>
+                 <div className="flex items-center gap-2">
+                    <Button variant={selectedMetric === 'faturamento' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedMetric('faturamento')}>Faturamento</Button>
+                    <Button variant={selectedMetric === 'volume' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedMetric('volume')}>Volume</Button>
+                    <Button variant={selectedMetric === 'ticketMedio' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedMetric('ticketMedio')}>Ticket Médio</Button>
+                 </div>
+            </div>
           </CardHeader>
           <CardContent className="pl-2">
              {loadingData ? (
@@ -171,7 +209,10 @@ export default function DashboardPage() {
                     <Skeleton className="h-[300px] w-[95%]" />
                 </div>
              ) : (
-                <TrendsChart data={chartData} />
+                <TrendsChart 
+                    data={chartData[selectedMetric]} 
+                    metric={selectedMetric}
+                />
              )}
           </CardContent>
         </Card>
