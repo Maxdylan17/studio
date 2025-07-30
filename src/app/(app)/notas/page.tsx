@@ -101,10 +101,26 @@ export default function NotasPage() {
             invoiceKey: selectedInvoice.key
         });
 
+        // Use mailto to open default email client. We need to URI-encode the subject and body.
         const subject = encodeURIComponent(emailData.subject);
-        const body = encodeURIComponent(emailData.body);
+        // To use HTML in mailto, it's not universally supported but we can try.
+        // We'll construct a simple text representation as a fallback.
+        const plainTextBody = `Olá ${selectedInvoice.client},\n\nSua nota fiscal está disponível.\n\nDetalhes:\nData: ${selectedInvoice.date}\nValor: R$ ${selectedInvoice.value}\n\nChave de Acesso: ${selectedInvoice.key}\n\nAtenciosamente,`;
+        
+        const bodyForMailto = encodeURIComponent(emailData.body)
+          .replace(/%3Cbr%3E/g, '%0A')
+          .replace(/%3Cbr\s\/\3E/g, '%0A')
+          .replace(/%3Cp%3E/g, '')
+          .replace(/%3C\/p%3E/g, '%0A%0A')
+          .replace(/%3Ch1%3E/g, '')
+          .replace(/%3C\/h1%3E/g, '%0A')
+          .replace(/%3Ch2%3E/g, '')
+          .replace(/%3C\/h2%3E/g, '%0A')
+          .replace(/%3Cstrong%3E/g, '')
+          .replace(/%3C\/strong%3E/g, '');
 
-        window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${body}`;
+
+        window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${bodyForMailto}`;
 
         toast({
             title: 'E-mail pronto para envio!',
@@ -275,7 +291,7 @@ export default function NotasPage() {
                 </span>
               </div>
             </div>
-            <DialogFooter className='flex-col sm:flex-row sm:justify-start gap-2'>
+            <DialogFooter className='flex-col sm:flex-row sm:justify-start gap-2 flex-wrap'>
               <Button onClick={() => handleAction('Baixar DANFE (PDF)')} variant="secondary">
                 <Download className="mr-2 h-4 w-4" /> Baixar DANFE (PDF)
               </Button>
