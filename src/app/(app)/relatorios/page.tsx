@@ -17,10 +17,10 @@ type Message = {
 }
 
 const examplePrompts = [
-    "Qual o status da minha última nota fiscal?",
-    "Liste todas as minhas faturas de maio.",
-    "Qual o valor total das minhas notas em aberto?",
-    "Quando vence minha próxima fatura?"
+    "Liste minhas 5 últimas notas fiscais emitidas.",
+    "Qual cliente mais recente foi cadastrado?",
+    "Qual o valor total das notas para o cliente 'Empresa Exemplo'?",
+    "Existem notas fiscais com status 'cancelada'?"
 ]
 
 export default function RelatoriosPage() {
