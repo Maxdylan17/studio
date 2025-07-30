@@ -29,7 +29,7 @@ import type {
 } from '@/ai/flows/schemas/conversational-analysis-schemas';
 import type { GenerateAvatarInput } from '@/ai/flows/schemas/generate-avatar-schemas';
 import type { GenerateInvoiceEmailInput, GenerateInvoiceEmailOutput } from '@/ai/flows/schemas/generate-invoice-email-schemas';
-import type { ProcessDocumentInput, ProcessDocumentOutput } from '@/ai/flows/process-document-flow';
+import type { ProcessDocumentInput, ProcessDocumentOutput } from '@/ai/flows/schemas/process-document-schemas';
 
 
 export async function handleAnalyzeIssuanceTrends(
