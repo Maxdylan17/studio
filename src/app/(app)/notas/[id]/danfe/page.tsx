@@ -11,7 +11,6 @@ import { Printer, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/hooks/use-auth';
 
 export default function DanfePage({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = React.useState<Invoice | null>(null);
@@ -21,10 +20,9 @@ export default function DanfePage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = React.useState(true);
   const { toast } = useToast();
   const router = useRouter();
-  const { user } = useAuth();
 
   React.useEffect(() => {
-    if (!params.id || !user) return;
+    if (!params.id) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -33,9 +31,10 @@ export default function DanfePage({ params }: { params: { id: string } }) {
         const invoiceRef = doc(db, 'invoices', params.id);
         const invoiceSnap = await getDoc(invoiceRef);
 
-        if (!invoiceSnap.exists() || invoiceSnap.data().userId !== user.uid) {
-          toast({ variant: 'destructive', title: 'Erro', description: 'Nota Fiscal não encontrada ou não pertence a você.' });
-          router.push('/notas');
+        if (!invoiceSnap.exists()) {
+          toast({ variant: 'destructive', title: 'Erro', description: 'Nota Fiscal não encontrada.' });
+          // Don't redirect, just show an error state, as this page might be accessed publicly.
+          setLoading(false);
           return;
         }
         
@@ -52,20 +51,22 @@ export default function DanfePage({ params }: { params: { id: string } }) {
           }
         }
 
-        // Fetch Company Settings
-        const settingsRef = doc(db, 'settings', user.uid);
-        const settingsSnap = await getDoc(settingsRef);
-        if (settingsSnap.exists()) {
-            const settingsData = settingsSnap.data();
-            setCompanySettings({
-                name: settingsData.companyName || 'FiscalFlow Soluções',
-                cnpj: settingsData.cnpj || '00.000.000/0001-00'
-            });
-        } else {
-             setCompanySettings({
-                name: 'FiscalFlow Soluções',
-                cnpj: '00.000.000/0001-00'
-            });
+        // Fetch Company Settings (from the user who created the invoice)
+        if (invoiceData.userId) {
+          const settingsRef = doc(db, 'settings', invoiceData.userId);
+          const settingsSnap = await getDoc(settingsRef);
+          if (settingsSnap.exists()) {
+              const settingsData = settingsSnap.data();
+              setCompanySettings({
+                  name: settingsData.companyName || 'FiscalFlow Soluções',
+                  cnpj: settingsData.cnpj || '00.000.000/0001-00'
+              });
+          } else {
+               setCompanySettings({
+                  name: 'FiscalFlow Soluções',
+                  cnpj: '00.000.000/0001-00'
+              });
+          }
         }
 
       } catch (error) {
@@ -76,14 +77,40 @@ export default function DanfePage({ params }: { params: { id: string } }) {
       }
     };
     fetchData();
-  }, [params.id, toast, user, router]);
+  }, [params.id, toast, router]);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const isLoading = loading || !invoice;
+  const isLoading = loading;
   const totalValue = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+  
+  if (isLoading) {
+    return (
+        <div className="bg-background min-h-screen p-4 sm:p-8 flex justify-center items-center">
+             <div className="max-w-4xl w-full space-y-6">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-10 w-1/3 ml-auto" />
+            </div>
+        </div>
+    )
+  }
+
+  if (!invoice) {
+     return (
+        <div className="bg-background min-h-screen p-4 sm:p-8 flex justify-center items-center">
+             <div className="text-center">
+                <h1 className="text-xl font-bold">Nota Fiscal não encontrada</h1>
+                <p className="text-muted-foreground">O link pode estar incorreto ou a nota pode ter sido excluída.</p>
+                <Button onClick={() => router.push('/dashboard')} className="mt-4">Voltar para o Dashboard</Button>
+            </div>
+        </div>
+    )
+  }
+
 
   return (
     <div className="bg-background min-h-screen p-4 sm:p-8">
@@ -124,14 +151,6 @@ export default function DanfePage({ params }: { params: { id: string } }) {
         </div>
 
         <div className="danfe-container border bg-card p-8 rounded-lg shadow-sm">
-            {isLoading ? (
-                <div className="space-y-6">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-40 w-full" />
-                    <Skeleton className="h-10 w-1/3 ml-auto" />
-                </div>
-            ) : (
                 <div className="space-y-6 text-sm">
                     {/* Header */}
                     <header className="flex justify-between items-start pb-4 border-b">
@@ -221,7 +240,6 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                         </div>
                     </footer>
                 </div>
-            )}
         </div>
       </div>
     </div>
