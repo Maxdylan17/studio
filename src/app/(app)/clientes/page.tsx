@@ -39,18 +39,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { Client } from '@/lib/definitions';
+import { handleGenerateAndUpdateAvatar } from '@/lib/actions';
 
-
-type Client = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  cpf_cnpj: string; // Added this field
-  userId: string; // This can be a static value now
-};
 
 const FAKE_USER_ID = "local-user";
 
@@ -69,22 +63,22 @@ export default function ClientesPage() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const fetchClients = async () => {
-        setLoadingData(true);
-        try {
-          const q = query(collection(db, "clients"), where("userId", "==", FAKE_USER_ID));
-          const querySnapshot = await getDocs(q);
-          const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
-          setClients(clientsData);
-        } catch (error) {
-          console.error("Error fetching clients: ", error);
-          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar os clientes.' });
-        } finally {
-          setLoadingData(false);
-        }
-    };
+    setLoadingData(true);
+    const q = query(collection(db, "clients"), where("userId", "==", FAKE_USER_ID));
+    
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
+        setClients(clientsData);
+        setLoadingData(false);
+    }, (error) => {
+        console.error("Error fetching clients: ", error);
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar os clientes.' });
+        setLoadingData(false);
+    });
 
-    fetchClients();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [toast]);
 
 
@@ -105,9 +99,6 @@ export default function ClientesPage() {
         // Edit existing client
         const clientRef = doc(db, "clients", editingClient.id);
         await updateDoc(clientRef, clientFormData);
-        setClients(clients.map((client) =>
-          client.id === editingClient.id ? { ...client, ...clientFormData } : client
-        ) as Client[]);
         toast({
           title: 'Cliente Atualizado!',
           description: `${clientFormData.name} foi atualizado com sucesso.`,
@@ -117,13 +108,25 @@ export default function ClientesPage() {
         const newClientData = {
           ...clientFormData,
           userId: FAKE_USER_ID,
+          avatarUrl: '', // Start with empty avatar
         };
         const docRef = await addDoc(collection(db, "clients"), newClientData);
-        setClients([...clients, { id: docRef.id, ...newClientData }]);
         toast({
           title: 'Cliente Salvo!',
-          description: `${clientFormData.name} foi adicionado à sua lista de clientes.`,
+          description: `${clientFormData.name} foi adicionado. Gerando avatar...`,
         });
+
+        // Trigger avatar generation in the background
+        handleGenerateAndUpdateAvatar({ clientId: docRef.id, name: newClientData.name })
+            .catch(error => {
+                console.error("Failed to generate avatar:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro no Avatar',
+                    description: 'Não foi possível gerar o avatar para o cliente.',
+                });
+            });
+
       }
       setOpen(false);
       setEditingClient(null);
@@ -134,8 +137,6 @@ export default function ClientesPage() {
 
   const handleDeleteClient = async (clientId: string) => {
     await deleteDoc(doc(db, "clients", clientId));
-    const updatedClients = clients.filter((client) => client.id !== clientId);
-    setClients(updatedClients);
     toast({
         title: 'Cliente Excluído!',
         description: 'O cliente foi removido da sua lista.',
@@ -267,23 +268,42 @@ export default function ClientesPage() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-64" /></TableCell>
+                    <TableCell>
+                        <div className='flex items-center gap-3'>
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className='space-y-1'>
+                                <Skeleton className="h-5 w-32" />
+                                <Skeleton className="h-3 w-40" />
+                            </div>
+                        </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-8 rounded-full ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredClients.length > 0 ? (
                 filteredClients.map((client) => (
                     <TableRow key={client.id}>
-                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="font-medium">
+                        <div className='flex items-center gap-3'>
+                            <Avatar>
+                                <AvatarImage src={client.avatarUrl} alt={client.name} data-ai-hint="logo abstract"/>
+                                <AvatarFallback>{client.name.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                {client.name}
+                                <div className="text-xs text-muted-foreground">{client.phone}</div>
+                            </div>
+                        </div>
+                    </TableCell>
                     <TableCell className="hidden text-muted-foreground sm:table-cell">
                         {client.email}
                     </TableCell>
                     <TableCell className="hidden text-muted-foreground md:table-cell">
                         {client.cpf_cnpj}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                         <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -309,7 +329,7 @@ export default function ClientesPage() {
               ) : (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
-                        <div className="text-center text-muted-foreground">
+                        <div className="text-center text-muted-foreground py-8">
                             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                             <p className='mb-2 font-medium'>Nenhum cliente encontrado.</p>
                             <p className='text-sm'>Adicione um novo cliente para começar.</p>
