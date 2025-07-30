@@ -20,7 +20,7 @@ export type SmartIssuanceInput = z.infer<typeof SmartIssuanceInputSchema>;
 const InvoiceItemSchema = z.object({
     description: z.string().describe('The detailed description of the item.'),
     quantity: z.number().describe('The quantity of the item.'),
-    unitPrice: z.number().describe('The unit price for the item. The AI should estimate a reasonable market price based on the description.'),
+    unitPrice: z.coerce.number().describe('The estimated unit price for the item. The AI must estimate a reasonable market price based on the description.'),
 });
 
 const SmartIssuanceOutputSchema = z.object({
@@ -36,8 +36,8 @@ const prompt = ai.definePrompt({
   name: 'smartIssuancePrompt',
   input: {schema: SmartIssuanceInputSchema},
   output: {schema: SmartIssuanceOutputSchema},
-  prompt: `You are a billing specialist. Your task is to break down a service description into a structured list of invoice items.
-You must also estimate a fair market price for each item based on the description.
+  prompt: `You are a billing specialist and market expert. Your task is to break down a service or product description into a structured list of invoice items.
+You must also estimate a fair and realistic market price for each item based on its description, in the local currency (BRL).
 
 The user's description is:
 "{{{description}}}"

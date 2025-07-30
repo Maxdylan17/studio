@@ -34,10 +34,16 @@ export function SmartIssuance({ replaceItems }: SmartIssuanceProps) {
     try {
       const result = await handleSmartIssuance({ description });
       if (result.items && result.items.length > 0) {
-        replaceItems(result.items);
+        // AI now returns price, make sure it is a number.
+        const itemsWithNumericPrices = result.items.map(item => ({
+          ...item,
+          unitPrice: typeof item.unitPrice === 'string' ? parseFloat(item.unitPrice) : item.unitPrice,
+          quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity,
+        }));
+        replaceItems(itemsWithNumericPrices);
         toast({
           title: 'Itens Gerados com Sucesso!',
-          description: 'A lista de itens foi preenchida pela IA.',
+          description: 'A lista de itens e preços foi preenchida pela IA.',
         });
       } else {
          toast({
@@ -66,7 +72,7 @@ export function SmartIssuance({ replaceItems }: SmartIssuanceProps) {
                 Emissão Inteligente (Opcional)
             </CardTitle>
             <CardDescription className="text-sm">
-            Descreva os produtos ou serviços e deixe a IA preencher os itens e valores para você.
+            Descreva os produtos ou serviços e deixe a IA preencher os itens e estimar os valores de mercado para você.
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -83,7 +89,7 @@ export function SmartIssuance({ replaceItems }: SmartIssuanceProps) {
                     ) : (
                         <Wand2 className="mr-2 h-4 w-4" />
                     )}
-                    {loading ? 'Gerando Itens...' : 'Gerar Itens com IA'}
+                    {loading ? 'Gerando Itens...' : 'Gerar Itens e Preços com IA'}
                 </Button>
             </div>
         </CardContent>

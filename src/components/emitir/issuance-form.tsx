@@ -252,7 +252,7 @@ export function IssuanceForm() {
                     <FormItem className="col-span-4 sm:col-span-2">
                       <FormLabel>Qtd.</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" step="any" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -265,7 +265,7 @@ export function IssuanceForm() {
                     <FormItem className="col-span-5 sm:col-span-2">
                       <FormLabel>Preço Unit.</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="R$" {...field} />
+                        <Input type="number" step="any" placeholder="R$" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
