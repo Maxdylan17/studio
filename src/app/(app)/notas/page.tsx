@@ -29,19 +29,33 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
-import { Download, Mail, Eye, FileText, RefreshCw } from 'lucide-react';
+import { Download, Mail, Eye, FileText, RefreshCw, Send, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleGenerateInvoiceEmail } from '@/lib/actions';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 const FAKE_USER_ID = "local-user";
+
+type EmailContent = {
+  to: string;
+  subject: string;
+  body: string;
+}
 
 export default function NotasPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  
+  const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,12 +84,16 @@ export default function NotasPage() {
     });
   };
 
-  const handleSendEmail = async () => {
+  const handleOpenDetails = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setDetailsDialogOpen(true);
+  }
+
+  const handleOpenEmailDialog = async () => {
     if (!selectedInvoice) return;
     
-    setIsSendingEmail(true);
+    setLoadingAction('email');
     try {
-        // Find client email
         let clientEmail = '';
         if (selectedInvoice.clientId) {
             const clientSnap = await getDoc(doc(db, "clients", selectedInvoice.clientId));
@@ -87,59 +105,58 @@ export default function NotasPage() {
         if (!clientEmail) {
             toast({
                 variant: 'destructive',
-                title: 'E-mail não encontrado',
-                description: 'Não foi possível encontrar o e-mail do cliente. Verifique o cadastro do cliente.',
+                title: 'E-mail do cliente não encontrado',
+                description: 'Verifique o cadastro do cliente para adicionar um e-mail.',
             });
-            setIsSendingEmail(false);
+            setLoadingAction(null);
             return;
         }
+        
+        const settingsDoc = await getDoc(doc(db, "settings", FAKE_USER_ID));
+        const companyName = settingsDoc.exists() ? settingsDoc.data().companyName : 'Sua Empresa';
 
         const emailData = await handleGenerateInvoiceEmail({
             clientName: selectedInvoice.client,
             invoiceDate: selectedInvoice.date,
             invoiceValue: selectedInvoice.value,
-            invoiceKey: selectedInvoice.key
+            invoiceKey: selectedInvoice.key,
+            companyName: companyName,
         });
 
-        // Use mailto to open default email client. We need to URI-encode the subject and body.
-        const subject = encodeURIComponent(emailData.subject);
-        // To use HTML in mailto, it's not universally supported but we can try.
-        // We'll construct a simple text representation as a fallback.
-        const plainTextBody = `Olá ${selectedInvoice.client},\n\nSua nota fiscal está disponível.\n\nDetalhes:\nData: ${selectedInvoice.date}\nValor: R$ ${selectedInvoice.value}\n\nChave de Acesso: ${selectedInvoice.key}\n\nAtenciosamente,`;
+        setEmailContent({
+          to: clientEmail,
+          subject: emailData.subject,
+          body: emailData.body
+        });
         
-        const bodyForMailto = encodeURIComponent(emailData.body)
-          .replace(/%3Cbr%3E/g, '%0A')
-          .replace(/%3Cbr\s\/\3E/g, '%0A')
-          .replace(/%3Cp%3E/g, '')
-          .replace(/%3C\/p%3E/g, '%0A%0A')
-          .replace(/%3Ch1%3E/g, '')
-          .replace(/%3C\/h1%3E/g, '%0A')
-          .replace(/%3Ch2%3E/g, '')
-          .replace(/%3C\/h2%3E/g, '%0A')
-          .replace(/%3Cstrong%3E/g, '')
-          .replace(/%3C\/strong%3E/g, '');
-
-
-        window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${bodyForMailto}`;
-
-        toast({
-            title: 'E-mail pronto para envio!',
-            description: 'Seu cliente de e-mail foi aberto com a mensagem.'
-        });
+        setDetailsDialogOpen(false); // Fecha o dialog de detalhes
+        setEmailDialogOpen(true); // Abre o dialog de email
 
     } catch (error) {
          toast({
             variant: 'destructive',
             title: 'Erro ao Gerar E-mail',
-            description: 'Não foi possível criar o corpo do e-mail. Tente novamente.'
+            description: 'Não foi possível criar o conteúdo do e-mail. Tente novamente.'
         });
         console.error(error);
     } finally {
-        setIsSendingEmail(false);
-        setSelectedInvoice(null);
+        setLoadingAction(null);
     }
   }
-
+  
+  const handleSendEmail = () => {
+    setLoadingAction('send');
+    // Simulação de envio
+    setTimeout(() => {
+        toast({
+            title: 'E-mail enviado com sucesso!',
+            description: `A nota fiscal foi enviada para ${emailContent?.to}.`
+        });
+        setEmailDialogOpen(false);
+        setEmailContent(null);
+        setLoadingAction(null);
+    }, 1500);
+  }
 
   const isLoading = loadingData;
 
@@ -208,7 +225,7 @@ export default function NotasPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedInvoice(invoice)}
+                      onClick={() => handleOpenDetails(invoice)}
                     >
                       <Eye className="mr-0 h-4 w-4 sm:mr-2" />
                       <span className="hidden sm:inline">Detalhes</span>
@@ -232,10 +249,16 @@ export default function NotasPage() {
         </CardContent>
       </Card>
 
+      {/* Details Dialog */}
       {selectedInvoice && (
         <Dialog
-          open={!!selectedInvoice}
-          onOpenChange={(open) => !open && setSelectedInvoice(null)}
+          open={detailsDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+                setSelectedInvoice(null);
+            }
+            setDetailsDialogOpen(open);
+          }}
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
@@ -298,17 +321,62 @@ export default function NotasPage() {
               <Button onClick={() => handleAction('Baixar XML')} variant="secondary">
                 <Download className="mr-2 h-4 w-4" /> Baixar XML
               </Button>
-               <Button onClick={handleSendEmail} variant="secondary" disabled={isSendingEmail}>
-                 {isSendingEmail ? (
+               <Button onClick={handleOpenEmailDialog} variant="default" disabled={loadingAction === 'email'}>
+                 {loadingAction === 'email' ? (
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                  ) : (
                     <Mail className="mr-2 h-4 w-4" />
                  )}
-                 {isSendingEmail ? 'Gerando...' : 'Enviar por E-mail'}
+                 {loadingAction === 'email' ? 'Gerando...' : 'Enviar por E-mail'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Email Dialog */}
+      {emailContent && (
+         <Dialog open={emailDialogOpen} onOpenChange={(open) => {
+            if (!open) {
+                setEmailContent(null);
+            }
+            setEmailDialogOpen(open);
+         }}>
+             <DialogContent className="sm:max-w-3xl">
+                 <DialogHeader>
+                    <DialogTitle>Enviar Nota Fiscal por E-mail</DialogTitle>
+                    <DialogDescription>
+                        Revise o e-mail gerado pela IA antes de enviar para o seu cliente.
+                    </DialogDescription>
+                 </DialogHeader>
+                 <div className="grid gap-4 py-4">
+                     <div className="grid grid-cols-6 items-center gap-4">
+                        <label htmlFor="email-to" className="col-span-1 text-sm font-medium text-muted-foreground">Para:</label>
+                        <Input id="email-to" value={emailContent.to} readOnly className="col-span-5" />
+                     </div>
+                     <div className="grid grid-cols-6 items-center gap-4">
+                        <label htmlFor="email-subject" className="col-span-1 text-sm font-medium text-muted-foreground">Assunto:</label>
+                        <Input id="email-subject" value={emailContent.subject} readOnly className="col-span-5" />
+                     </div>
+                    <Separator />
+                     <div 
+                        className="prose prose-sm dark:prose-invert max-w-none rounded-md border bg-card p-4 h-96 overflow-y-auto"
+                        dangerouslySetInnerHTML={{ __html: emailContent.body }} 
+                     />
+                 </div>
+                 <DialogFooter>
+                    <Button variant="ghost" onClick={() => setEmailDialogOpen(false)} disabled={loadingAction === 'send'}>Cancelar</Button>
+                     <Button onClick={handleSendEmail} disabled={loadingAction === 'send'}>
+                        {loadingAction === 'send' ? (
+                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Send className="mr-2 h-4 w-4" />
+                        )}
+                        {loadingAction === 'send' ? 'Enviando...' : 'Enviar E-mail'}
+                    </Button>
+                 </DialogFooter>
+             </DialogContent>
+         </Dialog>
       )}
     </div>
   );

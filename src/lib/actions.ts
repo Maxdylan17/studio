@@ -8,7 +8,7 @@ import { conversationalAnalysis } from '@/ai/flows/conversational-analysis';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
 import { generateInvoiceEmail } from '@/ai/flows/generate-invoice-email';
 import { processDocument } from '@/ai/flows/process-document-flow';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 import type {
