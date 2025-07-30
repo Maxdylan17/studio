@@ -149,7 +149,7 @@ export function IssuanceForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
                 <CardTitle>Destinatário</CardTitle>
                 <CardDescription>Informe para quem a nota fiscal será emitida.</CardDescription>
@@ -235,7 +235,7 @@ export function IssuanceForm() {
             <SmartIssuance replaceItems={replace} />
             <Separator className="my-6" />
             {fields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-12 gap-x-4 gap-y-2 items-end">
+              <div key={field.id} className="grid grid-cols-1 sm:grid-cols-12 gap-x-4 gap-y-2 items-start">
                 <FormField
                   control={form.control}
                   name={`items.${index}.description`}
@@ -253,7 +253,7 @@ export function IssuanceForm() {
                   control={form.control}
                   name={`items.${index}.quantity`}
                   render={({ field }) => (
-                    <FormItem className="col-span-4 sm:col-span-2">
+                    <FormItem className="col-span-6 sm:col-span-2">
                       <FormLabel>Qtd.</FormLabel>
                       <FormControl>
                         <Input type="number" step="any" {...field} />
@@ -266,7 +266,7 @@ export function IssuanceForm() {
                   control={form.control}
                   name={`items.${index}.unitPrice`}
                   render={({ field }) => (
-                    <FormItem className="col-span-5 sm:col-span-2">
+                    <FormItem className="col-span-6 sm:col-span-2">
                       <FormLabel>Preço Unit.</FormLabel>
                       <FormControl>
                         <Input type="number" step="any" placeholder="R$" {...field} />
@@ -275,7 +275,7 @@ export function IssuanceForm() {
                     </FormItem>
                   )}
                 />
-                <div className="col-span-3 sm:col-span-2 flex justify-end">
+                <div className="col-span-12 sm:col-span-2 flex justify-end items-end sm:pt-8">
                     <Button
                       type="button"
                       variant="destructive"
@@ -284,8 +284,14 @@ export function IssuanceForm() {
                       disabled={fields.length <= 1}
                     >
                       <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remover Item</span>
                     </Button>
                 </div>
+                 <div className='col-span-12'>
+                   <FormMessage>{form.formState.errors.items?.[index]?.description?.message}</FormMessage>
+                   <FormMessage>{form.formState.errors.items?.[index]?.quantity?.message}</FormMessage>
+                   <FormMessage>{form.formState.errors.items?.[index]?.unitPrice?.message}</FormMessage>
+                 </div>
               </div>
             ))}
             <Button

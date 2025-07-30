@@ -155,7 +155,7 @@ export default function ClientesPage() {
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 sm:p-8 animate-in fade-in-0">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
         <div className="flex items-center gap-2">
            <Dialog open={open} onOpenChange={(isOpen) => { if(!isOpen) setEditingClient(null); setOpen(isOpen);}}>
@@ -233,7 +233,7 @@ export default function ClientesPage() {
       </div>
       <Card>
         <CardHeader>
-            <div className='flex sm:flex-row flex-col justify-between gap-4'>
+            <div className='flex flex-col sm:flex-row justify-between gap-4'>
                 <div>
                     <CardTitle>Lista de Clientes</CardTitle>
                     <CardDescription>
@@ -293,7 +293,7 @@ export default function ClientesPage() {
                             </Avatar>
                             <div>
                                 {client.name}
-                                <div className="text-xs text-muted-foreground">{client.phone}</div>
+                                <div className="text-xs text-muted-foreground md:hidden">{client.email}</div>
                             </div>
                         </div>
                     </TableCell>

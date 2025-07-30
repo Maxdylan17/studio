@@ -120,6 +120,7 @@ export default function NotasPage() {
         console.error(error);
     } finally {
         setIsSendingEmail(false);
+        setSelectedInvoice(null);
     }
   }
 
@@ -145,7 +146,7 @@ export default function NotasPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">Valor</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -156,7 +157,7 @@ export default function NotasPage() {
                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-24" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+                        <TableCell className="text-right hidden sm:table-cell"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-9 w-28 ml-auto" /></TableCell>
                     </TableRow>
                 ))
@@ -165,8 +166,8 @@ export default function NotasPage() {
                 <TableRow key={invoice.id}>
                   <TableCell>
                     <div className="font-medium">{invoice.client}</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline truncate max-w-xs">
-                      Chave: {invoice.key}
+                    <div className="text-sm text-muted-foreground sm:hidden">
+                        R$ {invoice.value}
                     </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
@@ -178,23 +179,23 @@ export default function NotasPage() {
                             ? 'destructive'
                             : 'secondary'
                       }
+                      className="capitalize"
                     >
-                      {invoice.status.charAt(0).toUpperCase() +
-                        invoice.status.slice(1)}
+                      {invoice.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {invoice.date}
                   </TableCell>
-                  <TableCell className="text-right">R$ {invoice.value}</TableCell>
+                  <TableCell className="hidden text-right sm:table-cell">R$ {invoice.value}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedInvoice(invoice)}
                     >
-                      <Eye className="mr-2 h-4 w-4" />
-                      Detalhes
+                      <Eye className="mr-0 h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Detalhes</span>
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -259,9 +260,9 @@ export default function NotasPage() {
                             ? 'destructive'
                             : 'secondary'
                       }
+                      className="capitalize"
                     >
-                      {selectedInvoice.status.charAt(0).toUpperCase() +
-                        selectedInvoice.status.slice(1)}
+                      {selectedInvoice.status}
                     </Badge>
                 </span>
               </div>
@@ -274,7 +275,7 @@ export default function NotasPage() {
                 </span>
               </div>
             </div>
-            <DialogFooter className='flex flex-wrap sm:justify-start gap-2'>
+            <DialogFooter className='flex-col sm:flex-row sm:justify-start gap-2'>
               <Button onClick={() => handleAction('Baixar DANFE (PDF)')} variant="secondary">
                 <Download className="mr-2 h-4 w-4" /> Baixar DANFE (PDF)
               </Button>
