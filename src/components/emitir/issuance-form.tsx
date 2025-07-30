@@ -98,7 +98,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
     setOpenClientSearch(false);
   }
 
-  const { fields, remove } = useFieldArray({
+  const { fields, remove, append } = useFieldArray({
     control: form.control,
     name: 'items',
   });
@@ -242,7 +242,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
             <CardHeader>
                 <CardTitle>Itens da Nota</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
+            <CardContent className="space-y-4 max-h-[400px] overflow-y-auto p-4">
                 {fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-12 gap-x-4 gap-y-2 items-start p-1">
                     <FormField
