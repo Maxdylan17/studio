@@ -37,6 +37,7 @@ import { handleGenerateInvoiceEmail } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 
 type EmailContent = {
@@ -58,6 +59,7 @@ export default function NotasPage() {
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (!user) {
@@ -88,6 +90,10 @@ export default function NotasPage() {
       title: `Ação: ${action}`,
       description: `Sua solicitação foi processada (Simulação).`,
     });
+  };
+  
+  const handleOpenDanfe = (invoiceId: string) => {
+    window.open(`/notas/${invoiceId}/danfe`, '_blank');
   };
 
   const handleOpenDetails = (invoice: Invoice) => {
@@ -319,7 +325,7 @@ export default function NotasPage() {
               </div>
             </div>
             <DialogFooter className='flex-col sm:flex-row sm:justify-start gap-2 flex-wrap'>
-              <Button onClick={() => handleAction('Baixar DANFE (PDF)')} variant="secondary" size="sm">
+              <Button onClick={() => handleOpenDanfe(selectedInvoice.id)} variant="secondary" size="sm">
                 <Download className="mr-2 h-4 w-4" /> Baixar DANFE
               </Button>
               <Button onClick={() => handleAction('Baixar XML')} variant="secondary" size="sm">
@@ -385,4 +391,3 @@ export default function NotasPage() {
     </div>
   );
 }
-
