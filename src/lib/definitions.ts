@@ -19,3 +19,18 @@ export type Client = {
   userId: string;
   avatarUrl?: string;
 };
+
+export type InvoiceItem = {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+}
+
+export type ExtractedData = {
+    recipient: {
+        name?: string;
+        document?: string;
+        address?: string;
+    },
+    items: InvoiceItem[]
+}

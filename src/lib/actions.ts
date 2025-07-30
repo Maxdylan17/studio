@@ -7,6 +7,7 @@ import { smartIssuance } from '@/ai/flows/smart-issuance';
 import { conversationalAnalysis } from '@/ai/flows/conversational-analysis';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
 import { generateInvoiceEmail } from '@/ai/flows/generate-invoice-email';
+import { processDocument } from '@/ai/flows/process-document-flow';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -28,6 +29,7 @@ import type {
 } from '@/ai/flows/schemas/conversational-analysis-schemas';
 import type { GenerateAvatarInput } from '@/ai/flows/schemas/generate-avatar-schemas';
 import type { GenerateInvoiceEmailInput, GenerateInvoiceEmailOutput } from '@/ai/flows/schemas/generate-invoice-email-schemas';
+import type { ProcessDocumentInput, ProcessDocumentOutput } from '@/ai/flows/process-document-flow';
 
 
 export async function handleAnalyzeIssuanceTrends(
@@ -108,5 +110,17 @@ export async function handleGenerateInvoiceEmail(
     } catch (error) {
         console.error('Error generating invoice email:', error);
         throw new Error('Failed to generate invoice email.');
+    }
+}
+
+export async function handleProcessDocument(
+    input: ProcessDocumentInput
+): Promise<ProcessDocumentOutput> {
+    try {
+        const result = await processDocument(input);
+        return result;
+    } catch (error) {
+        console.error('Error processing document:', error);
+        throw new Error('Failed to process document with AI.');
     }
 }

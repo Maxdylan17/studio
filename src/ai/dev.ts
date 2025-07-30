@@ -7,3 +7,5 @@ import '@/ai/flows/smart-issuance.ts';
 import '@/ai/flows/conversational-analysis.ts';
 import '@/ai/flows/generate-avatar.ts';
 import '@/ai/flows/generate-invoice-email.ts';
+import '@/ai/flows/process-document-flow.ts';
+import '@/ai/flows/schemas/process-document-schemas.ts';

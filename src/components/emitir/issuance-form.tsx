@@ -14,20 +14,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { PlusCircle, Send, Trash2 } from 'lucide-react';
-import { DataCapture } from './data-capture';
+import { ArrowLeft, Send, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Invoice } from '@/lib/definitions';
+import type { Invoice, ExtractedData } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Skeleton } from '../ui/skeleton';
-import { SmartIssuance } from './smart-issuance';
-import { Label } from '@/components/ui/label';
+
 
 const itemSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
@@ -40,62 +36,37 @@ const formSchema = z.object({
     nome: z.string().min(2, 'Nome/Razão Social é obrigatório'),
     cpf_cnpj: z.string().min(11, 'CPF/CNPJ inválido'),
     endereco: z.string().optional(),
-    clientId: z.string().optional(), // To store the selected client's ID
+    clientId: z.string().optional(),
   }),
   items: z.array(itemSchema).min(1, 'Adicione pelo menos um item.'),
 });
 
-type Client = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  cpf_cnpj: string;
-  userId: string;
-};
+interface IssuanceFormProps {
+    initialData: ExtractedData | null;
+    onReset: () => void;
+}
 
 const FAKE_USER_ID = "local-user";
 
-export function IssuanceForm() {
+export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const [clients, setClients] = React.useState<Client[]>([]);
-  const [loadingClients, setLoadingClients] = React.useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       destinatario: {
-        nome: '',
-        cpf_cnpj: '',
-        endereco: '',
+        nome: initialData?.recipient?.name || '',
+        cpf_cnpj: initialData?.recipient?.document || '',
+        endereco: initialData?.recipient?.address || '',
         clientId: ''
       },
-      items: [{ description: '', quantity: 1, unitPrice: 0 }],
+      items: initialData?.items && initialData.items.length > 0 ? initialData.items : [{ description: '', quantity: 1, unitPrice: 0 }],
     },
   });
 
-  React.useEffect(() => {
-    const fetchClients = async () => {
-        setLoadingClients(true);
-        try {
-          const q = query(collection(db, "clients"), where("userId", "==", FAKE_USER_ID));
-          const querySnapshot = await getDocs(q);
-          const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
-          setClients(clientsData);
-        } catch (error) {
-          console.error("Error fetching clients: ", error);
-          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar os clientes.' });
-        } finally {
-          setLoadingClients(false);
-        }
-    };
 
-    fetchClients();
-  }, [toast]);
-
-
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, remove } = useFieldArray({
     control: form.control,
     name: 'items',
   });
@@ -103,16 +74,6 @@ export function IssuanceForm() {
   const totalValue = form.watch('items').reduce((acc, item) => {
     return acc + (item.quantity || 0) * (item.unitPrice || 0);
   }, 0);
-
-  const handleClientSelect = (clientId: string) => {
-    const selectedClient = clients.find(c => c.id === clientId);
-    if(selectedClient) {
-      form.setValue('destinatario.nome', selectedClient.name, { shouldValidate: true });
-      const clientDoc = selectedClient.cpf_cnpj || ''; 
-      form.setValue('destinatario.cpf_cnpj', clientDoc, { shouldValidate: true });
-      form.setValue('destinatario.clientId', selectedClient.id);
-    }
-  }
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -149,176 +110,146 @@ export function IssuanceForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
-          <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
-                <CardTitle>Destinatário</CardTitle>
-                <CardDescription>Informe para quem a nota fiscal será emitida.</CardDescription>
-            </div>
-            <DataCapture form={form} />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Selecionar Cliente Existente</Label>
-              {loadingClients ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select onValueChange={handleClientSelect} disabled={clients.length === 0}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={clients.length > 0 ? "Selecione um cliente para preencher os dados" : "Nenhum cliente cadastrado"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            
-            <div className="relative my-4">
-                <Separator />
-                <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-card px-2 text-xs text-muted-foreground">OU INFORME MANUALMENTE</span>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="destinatario.nome"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome/Razão Social</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome do cliente" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="destinatario.cpf_cnpj"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPF/CNPJ</FormLabel>
-                    <FormControl>
-                      <Input placeholder="000.000.000-00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="destinatario.endereco"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Rua, Número, Bairro, Cidade - Estado" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Itens da Nota</CardTitle>
-            <CardDescription>Adicione os produtos ou serviços prestados.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <SmartIssuance replaceItems={replace} />
-            <Separator className="my-6" />
-            {fields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-1 sm:grid-cols-12 gap-x-4 gap-y-2 items-start">
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.description`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-12 sm:col-span-6">
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Produto ou serviço" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.quantity`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-6 sm:col-span-2">
-                      <FormLabel>Qtd.</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="any" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.unitPrice`}
-                  render={({ field }) => (
-                    <FormItem className="col-span-6 sm:col-span-2">
-                      <FormLabel>Preço Unit.</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="any" placeholder="R$" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="col-span-12 sm:col-span-2 flex justify-end items-end sm:pt-8">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => remove(index)}
-                      disabled={fields.length <= 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Remover Item</span>
+            <CardHeader>
+                <div className='flex items-center gap-4'>
+                    <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={onReset}>
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Voltar</span>
                     </Button>
+                    <div>
+                        <CardTitle>Revisar e Emitir</CardTitle>
+                        <CardDescription>Verifique os dados extraídos pela IA e confirme a emissão.</CardDescription>
+                    </div>
                 </div>
-                 <div className='col-span-12'>
-                   <FormMessage>{form.formState.errors.items?.[index]?.description?.message}</FormMessage>
-                   <FormMessage>{form.formState.errors.items?.[index]?.quantity?.message}</FormMessage>
-                   <FormMessage>{form.formState.errors.items?.[index]?.unitPrice?.message}</FormMessage>
-                 </div>
-              </div>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => append({ description: '', quantity: 1, unitPrice: 0 })}
-            >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Item
-            </Button>
-            <Separator className="my-4" />
-            <div className='flex justify-end items-center'>
-                <p className="text-lg font-semibold">
-                    Total: {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-            </div>
-          </CardContent>
+            </CardHeader>
         </Card>
+        
+        <div className="grid lg:grid-cols-2 gap-6">
+            <Card>
+            <CardHeader>
+                <CardTitle>Destinatário</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="destinatario.nome"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Nome/Razão Social</FormLabel>
+                        <FormControl>
+                        <Input placeholder="Nome do cliente" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="destinatario.cpf_cnpj"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>CPF/CNPJ</FormLabel>
+                        <FormControl>
+                        <Input placeholder="000.000.000-00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                control={form.control}
+                name="destinatario.endereco"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Endereço (Opcional)</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Rua, Número, Bairro, Cidade - Estado" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </CardContent>
+            </Card>
+
+            <Card>
+            <CardHeader>
+                <CardTitle>Itens da Nota</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
+                {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-12 gap-x-4 gap-y-2 items-start p-1">
+                    <FormField
+                    control={form.control}
+                    name={`items.${index}.description`}
+                    render={({ field }) => (
+                        <FormItem className="col-span-12 sm:col-span-6">
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Produto ou serviço" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name={`items.${index}.quantity`}
+                    render={({ field }) => (
+                        <FormItem className="col-span-6 sm:col-span-2">
+                        <FormLabel>Qtd.</FormLabel>
+                        <FormControl>
+                            <Input type="number" step="any" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name={`items.${index}.unitPrice`}
+                    render={({ field }) => (
+                        <FormItem className="col-span-6 sm:col-span-2">
+                        <FormLabel>Preço Unit.</FormLabel>
+                        <FormControl>
+                            <Input type="number" step="any" placeholder="R$" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <div className="col-span-12 sm:col-span-2 flex justify-end items-end sm:pt-8">
+                        <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        disabled={fields.length <= 1}
+                        >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Remover Item</span>
+                        </Button>
+                    </div>
+                </div>
+                ))}
+            </CardContent>
+             <CardFooter className="flex-col items-stretch gap-4 pt-6">
+                <Separator />
+                <div className='flex justify-end items-center'>
+                    <p className="text-lg font-semibold">
+                        Total: {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                </div>
+             </CardFooter>
+            </Card>
+        </div>
         
         <div className="flex justify-end">
           <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? 'Emitindo...' : (
               <>
                 <Send className="mr-2 h-4 w-4" />
-                Emitir Nota
+                Emitir Nota Fiscal
               </>
             )}
           </Button>
