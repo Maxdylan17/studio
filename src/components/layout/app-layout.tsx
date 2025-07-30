@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
 import React from 'react';
+import { ThemeToggle } from './theme-toggle';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   
@@ -47,6 +48,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="w-full flex-1">
             {/* Can add breadcrumbs or search here */}
           </div>
+          <ThemeToggle />
         </header>
         <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
