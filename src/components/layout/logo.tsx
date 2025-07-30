@@ -14,9 +14,12 @@ export function Logo() {
         strokeLinejoin="round"
         className="h-8 w-8 text-primary"
       >
-        <path d="M6 3h12l4 6-10 12L2 9l4-6Z" />
-        <path d="M12 3v18" />
-        <path d="M2 9h20" />
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <path d="m12 18-2-2 2-2" />
+        <path d="m10 16h4" />
+        <path d="m12 14 2-2-2-2" />
+        <path d="m14 12h-4" />
       </svg>
       <h1 className="text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">
         FiscalFlow
