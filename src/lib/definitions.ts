@@ -18,7 +18,7 @@ export type Invoice = {
 };
 
 export type Client = {
-  id: string;
+  id:string;
   name: string;
   email: string;
   phone: string;
@@ -34,4 +34,14 @@ export type ExtractedData = {
         address?: string;
     },
     items: InvoiceItem[]
+}
+
+export type ExtractedClientData = {
+    [key: string]: string | undefined;
+    nome?: string;
+    cpf?: string;
+    rg?: string;
+    cnh?: string;
+    data_nascimento?: string;
+    filiacao?: string;
 }
