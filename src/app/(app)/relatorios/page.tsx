@@ -17,10 +17,10 @@ type Message = {
 }
 
 const examplePrompts = [
-    "Qual foi meu faturamento total este mês?",
-    "Liste minhas 5 últimas notas emitidas.",
-    "Quais clientes compraram mais de R$ 1.000,00?",
-    "Gere um resumo dos meus clientes."
+    "Qual o status da minha última nota fiscal?",
+    "Liste todas as minhas faturas de maio.",
+    "Qual o valor total das minhas notas em aberto?",
+    "Quando vence minha próxima fatura?"
 ]
 
 export default function RelatoriosPage() {
@@ -56,11 +56,11 @@ export default function RelatoriosPage() {
     return (
         <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
             <div className="flex items-center justify-between space-y-2">
-                <div className='flex items-end gap-2'>
+                <div className='flex items-end gap-3'>
                     <BrainCircuit className="h-8 w-8 text-primary" />
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Análise Conversacional</h1>
-                        <p className="text-muted-foreground">Pergunte e obtenha insights sobre seu negócio.</p>
+                        <h1 className="text-3xl font-bold tracking-tight">Assistente Fiscal IA</h1>
+                        <p className="text-muted-foreground">Tire suas dúvidas sobre faturas, pagamentos e muito mais.</p>
                     </div>
                 </div>
             </div>
@@ -70,8 +70,8 @@ export default function RelatoriosPage() {
                     {messages.length === 0 ? (
                         <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full">
                             <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
-                            <h3 className="text-lg font-semibold mb-2">Comece a Conversar com seus Dados</h3>
-                            <p className="text-sm max-w-md mx-auto mb-6">Faça perguntas em linguagem natural sobre suas vendas, clientes e faturamento.</p>
+                            <h3 className="text-lg font-semibold mb-2">Como posso ajudar?</h3>
+                            <p className="text-sm max-w-md mx-auto mb-6">Faça perguntas sobre suas notas fiscais, faturas e dados de faturamento.</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
                                 {examplePrompts.map(prompt => (
                                     <Button 
@@ -129,7 +129,7 @@ export default function RelatoriosPage() {
                 <div className="border-t p-4">
                     <div className="relative">
                         <Input
-                            placeholder="Pergunte algo sobre suas notas fiscais, clientes, faturamento..."
+                            placeholder="Qual o valor da minha última fatura?"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}

@@ -35,11 +35,11 @@ const conversationalAnalysisFlow = ai.defineFlow(
   async ({ query }) => {
     
     const llmResponse = await ai.generate({
-      prompt: `Você é um analista de negócios expert. Sua tarefa é responder perguntas sobre dados de faturamento e clientes.
-      Use a ferramenta 'getData' para buscar as informações necessárias.
-      Seja claro e direto em suas respostas. Use formatação Markdown para tabelas e listas quando apropriado.
+      prompt: `Você é um "Assistente Fiscal" de IA. Sua tarefa é responder a perguntas de clientes sobre suas notas fiscais, faturas e dados de faturamento.
+      Use a ferramenta 'getData' para buscar as informações necessárias para responder à pergunta.
+      Seja claro, objetivo e amigável em suas respostas. Use formatação Markdown para apresentar dados como tabelas e listas quando for apropriado.
 
-      Pergunta do usuário: "${query}"
+      Pergunta do cliente: "${query}"
       `,
       tools: [getDataTool],
       model: 'googleai/gemini-1.5-flash-preview',
@@ -54,7 +54,7 @@ const conversationalAnalysisFlow = ai.defineFlow(
     const toolResult = await toolResponse.execute();
 
     const finalResponse = await ai.generate({
-        prompt: `Com base nos dados a seguir, responda a pergunta do usuário.
+        prompt: `Com base nos dados a seguir, responda à pergunta do cliente de forma clara e amigável.
 
         Pergunta: "${query}"
         Dados:
