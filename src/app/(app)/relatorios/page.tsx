@@ -58,12 +58,12 @@ export default function RelatoriosPage() {
             <div className="flex flex-col items-center justify-center space-y-2 text-center">
                 <BrainCircuit className="h-10 w-10 text-primary" />
                 <h1 className="text-3xl font-bold tracking-tight">Assistente Fiscal IA</h1>
-                <p className="text-muted-foreground max-w-md">
+                <p className="text-muted-foreground max-w-md mx-auto">
                     Tire suas dúvidas sobre faturas, pagamentos, clientes e muito mais.
                 </p>
             </div>
             
-            <Card className="h-[calc(100vh-14rem)] flex flex-col">
+            <Card className="h-[calc(100vh-16rem)] flex flex-col">
                 <CardContent className="flex-1 p-6 overflow-y-auto space-y-6">
                     {messages.length === 0 ? (
                         <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full">
@@ -75,7 +75,7 @@ export default function RelatoriosPage() {
                                     <Button 
                                         key={prompt}
                                         variant="outline" 
-                                        className="text-center h-auto py-2"
+                                        className="text-center h-auto py-2 whitespace-normal"
                                         onClick={() => handleSendMessage(prompt)}
                                     >
                                         {prompt}
@@ -87,7 +87,7 @@ export default function RelatoriosPage() {
                         messages.map((message, index) => (
                             <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
                                 {message.role === 'assistant' && (
-                                    <div className="bg-primary text-primary-foreground rounded-full p-2">
+                                    <div className="bg-primary text-primary-foreground rounded-full p-2 shrink-0">
                                         <Bot className="h-5 w-5" />
                                     </div>
                                 )}
@@ -95,7 +95,7 @@ export default function RelatoriosPage() {
                                     <article className="prose prose-sm dark:prose-invert max-w-none">
                                         <ReactMarkdown
                                             components={{
-                                                table: ({node, ...props}) => <table className="table-auto w-full" {...props} />,
+                                                table: ({node, ...props}) => <div className="overflow-x-auto"><table className="table-auto w-full" {...props} /></div>,
                                                 thead: ({node, ...props}) => <thead className="bg-muted" {...props} />,
                                                 tr: ({node, ...props}) => <tr className="border-b" {...props} />,
                                                 th: ({node, ...props}) => <th className="p-2 text-left font-medium" {...props} />,
@@ -106,7 +106,7 @@ export default function RelatoriosPage() {
                                     </article>
                                 </div>
                                 {message.role === 'user' && (
-                                    <div className="bg-muted text-muted-foreground rounded-full p-2">
+                                    <div className="bg-muted text-muted-foreground rounded-full p-2 shrink-0">
                                         <User className="h-5 w-5" />
                                     </div>
                                 )}
@@ -115,7 +115,7 @@ export default function RelatoriosPage() {
                     )}
                     {loading && (
                         <div className="flex items-start gap-4">
-                            <div className="bg-primary text-primary-foreground rounded-full p-2">
+                            <div className="bg-primary text-primary-foreground rounded-full p-2 shrink-0">
                                 <Bot className="h-5 w-5" />
                             </div>
                             <div className="max-w-xl rounded-lg p-3 bg-card border w-full">
