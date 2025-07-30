@@ -29,16 +29,18 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
-import { Download, Mail, Eye, FileText } from 'lucide-react';
+import { Download, Mail, Eye, FileText, RefreshCw } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { handleGenerateInvoiceEmail } from '@/lib/actions';
 
 const FAKE_USER_ID = "local-user";
 
 export default function NotasPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { toast } = useToast();
 
@@ -67,6 +69,60 @@ export default function NotasPage() {
       description: `Sua solicitação foi processada (Simulação).`,
     });
   };
+
+  const handleSendEmail = async () => {
+    if (!selectedInvoice) return;
+    
+    setIsSendingEmail(true);
+    try {
+        // Find client email
+        let clientEmail = '';
+        if (selectedInvoice.clientId) {
+            const clientSnap = await getDoc(doc(db, "clients", selectedInvoice.clientId));
+            if (clientSnap.exists()) {
+                clientEmail = clientSnap.data().email;
+            }
+        }
+        
+        if (!clientEmail) {
+            toast({
+                variant: 'destructive',
+                title: 'E-mail não encontrado',
+                description: 'Não foi possível encontrar o e-mail do cliente. Verifique o cadastro do cliente.',
+            });
+            setIsSendingEmail(false);
+            return;
+        }
+
+        const emailData = await handleGenerateInvoiceEmail({
+            clientName: selectedInvoice.client,
+            invoiceDate: selectedInvoice.date,
+            invoiceValue: selectedInvoice.value,
+            invoiceKey: selectedInvoice.key
+        });
+
+        const subject = encodeURIComponent(emailData.subject);
+        const body = encodeURIComponent(emailData.body);
+
+        window.location.href = `mailto:${clientEmail}?subject=${subject}&body=${body}`;
+
+        toast({
+            title: 'E-mail pronto para envio!',
+            description: 'Seu cliente de e-mail foi aberto com a mensagem.'
+        });
+
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Erro ao Gerar E-mail',
+            description: 'Não foi possível criar o corpo do e-mail. Tente novamente.'
+        });
+        console.error(error);
+    } finally {
+        setIsSendingEmail(false);
+    }
+  }
+
 
   const isLoading = loadingData;
 
@@ -218,15 +274,20 @@ export default function NotasPage() {
                 </span>
               </div>
             </div>
-            <DialogFooter className='sm:justify-start gap-2'>
+            <DialogFooter className='flex flex-wrap sm:justify-start gap-2'>
               <Button onClick={() => handleAction('Baixar DANFE (PDF)')} variant="secondary">
                 <Download className="mr-2 h-4 w-4" /> Baixar DANFE (PDF)
               </Button>
               <Button onClick={() => handleAction('Baixar XML')} variant="secondary">
                 <Download className="mr-2 h-4 w-4" /> Baixar XML
               </Button>
-               <Button onClick={() => handleAction('Enviar por E-mail')} variant="secondary">
-                <Mail className="mr-2 h-4 w-4" /> Enviar por E-mail
+               <Button onClick={handleSendEmail} variant="secondary" disabled={isSendingEmail}>
+                 {isSendingEmail ? (
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                 ) : (
+                    <Mail className="mr-2 h-4 w-4" />
+                 )}
+                 {isSendingEmail ? 'Gerando...' : 'Enviar por E-mail'}
               </Button>
             </DialogFooter>
           </DialogContent>

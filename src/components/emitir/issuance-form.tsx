@@ -40,6 +40,7 @@ const formSchema = z.object({
     nome: z.string().min(2, 'Nome/Razão Social é obrigatório'),
     cpf_cnpj: z.string().min(11, 'CPF/CNPJ inválido'),
     endereco: z.string().optional(),
+    clientId: z.string().optional(), // To store the selected client's ID
   }),
   items: z.array(itemSchema).min(1, 'Adicione pelo menos um item.'),
 });
@@ -68,6 +69,7 @@ export function IssuanceForm() {
         nome: '',
         cpf_cnpj: '',
         endereco: '',
+        clientId: ''
       },
       items: [{ description: '', quantity: 1, unitPrice: 0 }],
     },
@@ -108,6 +110,7 @@ export function IssuanceForm() {
       form.setValue('destinatario.nome', selectedClient.name, { shouldValidate: true });
       const clientDoc = selectedClient.cpf_cnpj || ''; 
       form.setValue('destinatario.cpf_cnpj', clientDoc, { shouldValidate: true });
+      form.setValue('destinatario.clientId', selectedClient.id);
     }
   }
 
@@ -116,6 +119,7 @@ export function IssuanceForm() {
     const newInvoice: Omit<Invoice, 'id'> = {
       key: `NFE352407${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
       client: values.destinatario.nome,
+      clientId: values.destinatario.clientId || null,
       date: new Date().toISOString().split('T')[0],
       status: 'autorizada',
       value: totalValue.toFixed(2).replace('.',','),

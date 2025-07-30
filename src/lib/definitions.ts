@@ -3,6 +3,7 @@ export type Invoice = {
   id: string;
   key: string;
   client: string;
+  clientId: string | null;
   date: string;
   status: 'autorizada' | 'cancelada' | 'rascunho';
   value: string;

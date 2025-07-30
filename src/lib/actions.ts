@@ -6,6 +6,7 @@ import { smartDataCapture } from '@/ai/flows/smart-data-capture';
 import { smartIssuance } from '@/ai/flows/smart-issuance';
 import { conversationalAnalysis } from '@/ai/flows/conversational-analysis';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
+import { generateInvoiceEmail } from '@/ai/flows/generate-invoice-email';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -26,6 +27,7 @@ import type {
     ConversationalAnalysisOutput
 } from '@/ai/flows/schemas/conversational-analysis-schemas';
 import type { GenerateAvatarInput } from '@/ai/flows/schemas/generate-avatar-schemas';
+import type { GenerateInvoiceEmailInput, GenerateInvoiceEmailOutput } from '@/ai/flows/schemas/generate-invoice-email-schemas';
 
 
 export async function handleAnalyzeIssuanceTrends(
@@ -95,4 +97,16 @@ export async function handleGenerateAndUpdateAvatar(
     // Don't throw error to the client, just log it.
     // The main operation (creating the client) was successful.
   }
+}
+
+export async function handleGenerateInvoiceEmail(
+    input: GenerateInvoiceEmailInput
+): Promise<GenerateInvoiceEmailOutput> {
+    try {
+        const result = await generateInvoiceEmail(input);
+        return result;
+    } catch (error) {
+        console.error('Error generating invoice email:', error);
+        throw new Error('Failed to generate invoice email.');
+    }
 }
