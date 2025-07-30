@@ -322,5 +322,3 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
-
-    
