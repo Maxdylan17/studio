@@ -72,7 +72,7 @@ export default function RelatoriosPage() {
                             <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
                             <h3 className="text-lg font-semibold mb-2">Como posso ajudar?</h3>
                             <p className="text-sm max-w-md mx-auto mb-6">Faça perguntas sobre suas notas fiscais, faturas e dados de faturamento.</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl mx-auto">
                                 {examplePrompts.map(prompt => (
                                     <Button 
                                         key={prompt}
