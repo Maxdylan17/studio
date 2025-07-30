@@ -77,7 +77,7 @@ export default function RelatoriosPage() {
                                     <Button 
                                         key={prompt}
                                         variant="outline" 
-                                        className="text-left h-auto py-2"
+                                        className="text-center h-auto py-2"
                                         onClick={() => handleSendMessage(prompt)}
                                     >
                                         {prompt}
