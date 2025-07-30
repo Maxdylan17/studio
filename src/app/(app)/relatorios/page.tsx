@@ -55,17 +55,15 @@ export default function RelatoriosPage() {
     
     return (
         <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
-            <div className="flex items-center justify-between space-y-2">
-                <div className='flex items-end gap-3'>
-                    <BrainCircuit className="h-8 w-8 text-primary" />
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Assistente Fiscal IA</h1>
-                        <p className="text-muted-foreground">Tire suas dúvidas sobre faturas, pagamentos e muito mais.</p>
-                    </div>
-                </div>
+            <div className="flex flex-col items-center justify-center space-y-2 text-center">
+                <BrainCircuit className="h-10 w-10 text-primary" />
+                <h1 className="text-3xl font-bold tracking-tight">Assistente Fiscal IA</h1>
+                <p className="text-muted-foreground max-w-md">
+                    Tire suas dúvidas sobre faturas, pagamentos, clientes e muito mais.
+                </p>
             </div>
             
-            <Card className="h-[calc(100vh-12rem)] flex flex-col">
+            <Card className="h-[calc(100vh-14rem)] flex flex-col">
                 <CardContent className="flex-1 p-6 overflow-y-auto space-y-6">
                     {messages.length === 0 ? (
                         <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full">
