@@ -45,6 +45,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Client } from '@/lib/definitions';
 import { handleGenerateAndUpdateAvatar } from '@/lib/actions';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from 'next/navigation';
 
 
 const FAKE_USER_ID = "local-user";
@@ -54,7 +55,6 @@ export default function ClientesPage() {
   const [loadingData, setLoadingData] = React.useState(true);
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [editingClient, setEditingClient] = React.useState<Partial<Client> | null>(null);
   const [clientFormData, setClientFormData] = React.useState({
     name: '',
     email: '',
@@ -63,12 +63,12 @@ export default function ClientesPage() {
     avatarPrompt: ''
   });
   const { toast } = useToast();
+  const router = useRouter();
 
   React.useEffect(() => {
     setLoadingData(true);
     const q = query(collection(db, "clients"), where("userId", "==", FAKE_USER_ID));
     
-    // Use onSnapshot for real-time updates
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const clientsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
         setClients(clientsData);
@@ -79,7 +79,6 @@ export default function ClientesPage() {
         setLoadingData(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [toast]);
 
@@ -89,42 +88,13 @@ export default function ClientesPage() {
     setClientFormData((prev) => ({ ...prev, [id]: value }));
   };
   
-  const handleOpenDialog = (client: Partial<Client> | null) => {
-    setEditingClient(client);
-    setClientFormData(client ? { name: client.name || '', email: client.email || '', phone: client.phone || '', cpf_cnpj: client.cpf_cnpj || '', avatarPrompt: '' } : { name: '', email: '', phone: '', cpf_cnpj: '', avatarPrompt: '' });
+  const handleOpenDialog = () => {
+    setClientFormData({ name: '', email: '', phone: '', cpf_cnpj: '', avatarPrompt: '' });
     setOpen(true);
   }
 
   const handleSaveClient = async () => {
     if (clientFormData.name && clientFormData.email && clientFormData.phone && clientFormData.cpf_cnpj) {
-      if (editingClient && editingClient.id) {
-        // Edit existing client
-        const clientRef = doc(db, "clients", editingClient.id);
-        const { avatarPrompt, ...updateData } = clientFormData;
-        await updateDoc(clientRef, updateData);
-        toast({
-          title: 'Cliente Atualizado!',
-          description: `${clientFormData.name} foi atualizado com sucesso.`,
-        });
-
-        // Optionally re-generate avatar on edit if prompt is provided
-        if (clientFormData.avatarPrompt) {
-            toast({
-              title: 'Gerando novo avatar...',
-              description: 'O avatar está sendo atualizado com sua descrição.',
-            });
-            handleGenerateAndUpdateAvatar({ clientId: editingClient.id, name: clientFormData.name, prompt: clientFormData.avatarPrompt })
-            .catch(error => {
-                console.error("Failed to re-generate avatar:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Erro no Avatar',
-                    description: 'Não foi possível gerar o novo avatar.',
-                });
-            });
-        }
-
-      } else {
         // Add new client
         const { avatarPrompt, ...newClientData } = {
           ...clientFormData,
@@ -148,9 +118,7 @@ export default function ClientesPage() {
                 });
             });
 
-      }
       setOpen(false);
-      setEditingClient(null);
     } else {
         toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Preencha todos os campos para salvar.' });
     }
@@ -163,6 +131,10 @@ export default function ClientesPage() {
         description: 'O cliente foi removido da sua lista.',
         variant: 'destructive'
     })
+  };
+
+  const handleRowClick = (clientId: string) => {
+    router.push(`/clientes/${clientId}`);
   };
 
   const filteredClients = clients.filter((client) =>
@@ -179,17 +151,17 @@ export default function ClientesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
         <div className="flex items-center gap-2">
-           <Dialog open={open} onOpenChange={(isOpen) => { if(!isOpen) setEditingClient(null); setOpen(isOpen);}}>
+           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button onClick={() => handleOpenDialog(null)}>
+                <Button onClick={handleOpenDialog}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Novo Cliente
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                <DialogTitle>{editingClient ? 'Editar Cliente' : 'Adicionar Novo Cliente'}</DialogTitle>
+                <DialogTitle>Adicionar Novo Cliente</DialogTitle>
                 <DialogDescription>
-                    {editingClient ? 'Altere as informações do cliente.' : 'Preencha as informações do novo cliente.'} Clique em salvar para concluir.
+                    Preencha as informações do novo cliente. Clique em salvar para concluir.
                 </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -250,7 +222,7 @@ export default function ClientesPage() {
                         id="avatarPrompt"
                         value={clientFormData.avatarPrompt}
                         onChange={handleInputChange}
-                        placeholder={editingClient ? "Descreva um novo avatar para ser gerado." : "Opcional: Descreva o logo. Ex: um foguete decolando."}
+                        placeholder={"Opcional: Descreva o logo. Ex: um foguete decolando."}
                         className="col-span-3"
                         rows={2}
                     />
@@ -318,7 +290,7 @@ export default function ClientesPage() {
                 ))
               ) : filteredClients.length > 0 ? (
                 filteredClients.map((client) => (
-                    <TableRow key={client.id}>
+                    <TableRow key={client.id} className="cursor-pointer" onClick={() => handleRowClick(client.id)}>
                     <TableCell className="font-medium">
                         <div className='flex items-center gap-3'>
                             <Avatar>
@@ -344,14 +316,15 @@ export default function ClientesPage() {
                             aria-haspopup="true"
                             size="icon"
                             variant="ghost"
+                            onClick={(e) => e.stopPropagation()}
                             >
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">Toggle menu</span>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleOpenDialog(client)}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleRowClick(client.id)}>Ver Detalhes</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDeleteClient(client.id)}>
                             Excluir
                             </DropdownMenuItem>
@@ -378,3 +351,5 @@ export default function ClientesPage() {
     </div>
   );
 }
+
+    
