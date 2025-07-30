@@ -142,6 +142,16 @@ export default function NotasPage() {
                 clientPhone = (clientSnap.data().phone || '').replace(/\D/g, '');
             }
         }
+        
+        if (!clientPhone) {
+            toast({
+                variant: 'destructive',
+                title: 'Telefone não encontrado',
+                description: 'O cliente não possui um número de telefone válido para envio via WhatsApp.',
+            });
+            setLoadingAction(null);
+            return;
+        }
 
         const danfeUrl = `${window.location.origin}/notas/${selectedInvoice.id}/danfe`;
         const message = `Olá, ${selectedInvoice.client}! Segue a sua nota fiscal no valor de R$ ${selectedInvoice.value}, emitida em ${selectedInvoice.date}. Você pode visualizá-la aqui: ${danfeUrl}`;
@@ -391,10 +401,10 @@ export default function NotasPage() {
                 </span>
               </div>
             </div>
-            <DialogFooter className='flex-col-reverse items-stretch gap-2 sm:flex-row sm:justify-between'>
+            <DialogFooter className='flex-col-reverse items-stretch gap-2 sm:flex-row sm:justify-between sm:items-center'>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="w-full sm:w-auto" disabled={loadingAction === `delete-${selectedInvoice.id}`}>
+                    <Button variant="destructive" size="sm" className="w-full sm:w-auto" disabled={loadingAction === `delete-${selectedInvoice.id}`}>
                         {loadingAction === `delete-${selectedInvoice.id}` ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                         Excluir
                     </Button>
@@ -420,7 +430,7 @@ export default function NotasPage() {
                     </Button>
                     <Button onClick={handleShareOnWhatsApp} variant="secondary" size="sm" disabled={loadingAction === 'whatsapp'}>
                         {loadingAction === 'whatsapp' ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <WhatsAppIcon />}
-                        WhatsApp
+                        <span className="ml-2">WhatsApp</span>
                     </Button>
                     <Button onClick={handleOpenEmailDialog} variant="default" disabled={loadingAction === 'email'} size="sm">
                         {loadingAction === 'email' ? (
@@ -428,7 +438,7 @@ export default function NotasPage() {
                         ) : (
                         <Mail className="mr-2 h-4 w-4" />
                         )}
-                        {loadingAction === 'email' ? 'Gerando...' : 'Enviar por E-mail'}
+                        {loadingAction === 'email' ? 'Gerando...' : 'E-mail'}
                     </Button>
                 </div>
             </DialogFooter>
@@ -483,3 +493,5 @@ export default function NotasPage() {
     </div>
   );
 }
+
+    
