@@ -71,11 +71,11 @@ export default function RecorrenciasPage() {
     };
     
     setLoadingData(true);
-    const q = query(collection(db, "recurrences"), where("userId", "==", user.uid), orderBy("startDate", "asc"));
+    const q = query(collection(db, "recurrences"), where("userId", "==", user.uid), orderBy("startDate", "desc"));
     
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const recurrencesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Recurrence[];
-        setRecurrences(recurrencesData.reverse());
+        setRecurrences(recurrencesData);
         setLoadingData(false);
     }, (error) => {
         console.error("Error fetching recurrences: ", error);
@@ -285,7 +285,3 @@ export default function RecorrenciasPage() {
     </div>
   );
 }
-
-    
-
-    
