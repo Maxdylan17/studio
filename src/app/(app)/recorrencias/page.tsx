@@ -166,7 +166,7 @@ export default function RecorrenciasPage() {
         <h1 className="text-3xl font-bold tracking-tight">Faturas Recorrentes</h1>
         <div className="flex items-center gap-2">
             <Button onClick={handleRunRecurrences} variant="outline" disabled={loadingAction}>
-                {loadingAction ? 'Executando...' : 'Executar Recorrências'}
+                {loadingAction ? 'Gerando...' : 'Gerar Faturas Pendentes'}
             </Button>
             <Button onClick={() => handleOpenForm()}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Nova Recorrência
@@ -285,3 +285,5 @@ export default function RecorrenciasPage() {
     </div>
   );
 }
+
+    
