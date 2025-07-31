@@ -72,7 +72,7 @@ export const cancelInvoiceTool = ai.defineTool(
         const invoiceRef = doc(db, "invoices", invoice.id);
         await updateDoc(invoiceRef, { status: 'cancelada' });
 
-        return { success: true, message: `A nota fiscal para ${invoice.client} no valor de R$ ${invoice.value} foi cancelada com sucesso.` };
+        return { success: true, message: `A nota fiscal para ${invoice.client} no valor de R$ ${invoice.value.toLocaleString('pt-BR')} foi cancelada com sucesso.` };
 
     } catch (error) {
       console.error("Error canceling invoice with tool: ", error);

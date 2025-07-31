@@ -261,7 +261,7 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                                 <Separator />
                                 <div className="flex justify-between text-lg font-bold">
                                     <span>VALOR TOTAL DA NOTA:</span>
-                                    <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                    <span>{invoice.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                                 </div>
                             </div>
                         </div>

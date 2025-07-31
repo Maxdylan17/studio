@@ -225,9 +225,9 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
         {/* Invoices History Card */}
         <Card>
             <CardHeader>
-                <CardTitle>Histórico de Notas Fiscais</CardTitle>
+                <CardTitle>Histórico de Faturas</CardTitle>
                 <CardDescription>
-                    Todas as notas fiscais emitidas para este cliente.
+                    Todas as faturas emitidas para este cliente.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -257,12 +257,12 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
                                  <div className="font-mono text-xs break-all pr-4">{invoice.key}</div>
                                </TableCell>
                                <TableCell className="hidden sm:table-cell">
-                                 <Badge variant={invoice.status === 'autorizada' ? 'default' : invoice.status === 'cancelada' ? 'destructive' : 'secondary'} className="capitalize">
+                                 <Badge variant={invoice.status === 'paga' ? 'success' : invoice.status === 'pendente' ? 'warning' : 'destructive'} className="capitalize">
                                    {invoice.status}
                                  </Badge>
                                </TableCell>
                                <TableCell className="hidden md:table-cell">{invoice.date}</TableCell>
-                               <TableCell className="text-right">R$ {invoice.value}</TableCell>
+                               <TableCell className="text-right">{invoice.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                              </TableRow>
                            ))
                         ) : (
@@ -270,8 +270,8 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
                                 <TableCell colSpan={4} className="h-24 text-center">
                                     <div className="text-center text-muted-foreground py-8">
                                         <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                                        <p className='mb-2 font-medium'>Nenhuma nota fiscal encontrada.</p>
-                                        <p className='text-sm'>Nenhuma nota foi emitida para este cliente ainda.</p>
+                                        <p className='mb-2 font-medium'>Nenhuma fatura encontrada.</p>
+                                        <p className='text-sm'>Nenhuma fatura foi emitida para este cliente ainda.</p>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -322,4 +322,3 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
-

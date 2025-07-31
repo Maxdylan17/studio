@@ -117,11 +117,11 @@ export default function DashboardPage() {
         });
         
         return {
-          paid: filteredInvoices.filter(i => i.status === 'paga').reduce((sum, i) => sum + parseFloat(i.value), 0),
-          pending: filteredInvoices.filter(i => i.status === 'pendente').reduce((sum, i) => sum + parseFloat(i.value), 0),
-          overdue: filteredInvoices.filter(i => i.status === 'vencida').reduce((sum, i) => sum + parseFloat(i.value), 0),
+          paid: filteredInvoices.filter(i => i.status === 'paga').reduce((sum, i) => sum + i.value, 0),
+          pending: filteredInvoices.filter(i => i.status === 'pendente').reduce((sum, i) => sum + i.value, 0),
+          overdue: filteredInvoices.filter(i => i.status === 'vencida').reduce((sum, i) => sum + i.value, 0),
           volume: filteredInvoices.length,
-          totalValue: filteredInvoices.reduce((sum, i) => sum + parseFloat(i.value), 0),
+          totalValue: filteredInvoices.reduce((sum, i) => sum + i.value, 0),
         };
       };
 
@@ -146,7 +146,7 @@ export default function DashboardPage() {
         if(year >= now.getFullYear() - 1) {
             if (!monthlyChartData[year]) monthlyChartData[year] = {};
             if (!monthlyChartData[year][month]) monthlyChartData[year][month] = { total: 0, count: 0 };
-            monthlyChartData[year][month].total += parseFloat(inv.value.replace(',', '.'));
+            monthlyChartData[year][month].total += inv.value;
             monthlyChartData[year][month].count += 1;
         }
       });

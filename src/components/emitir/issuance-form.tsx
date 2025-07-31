@@ -125,7 +125,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
       clientId: values.destinatario.clientId || null,
       date: new Date().toISOString().split('T')[0],
       status: 'pendente',
-      value: totalValue.toFixed(2).replace('.',','),
+      value: totalValue,
       userId: user.uid,
       items: values.items,
       dueDate: values.dueDate ? values.dueDate.toISOString().split('T')[0] : undefined,

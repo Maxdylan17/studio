@@ -12,7 +12,7 @@ export type Invoice = {
   clientId: string | null;
   date: string;
   status: 'pendente' | 'paga' | 'vencida' | 'cancelada' | 'rascunho';
-  value: string;
+  value: number;
   userId: string;
   items: InvoiceItem[];
   dueDate?: string;
