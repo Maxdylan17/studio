@@ -26,18 +26,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
-import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2 } from 'lucide-react';
+import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2, MoreHorizontal, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy, getDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleGenerateInvoiceEmail } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { isAfter } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,6 +78,14 @@ const WhatsAppIcon = () => (
     </svg>
 );
 
+const statusConfig: { [key in Invoice['status']]: { variant: "default" | "secondary" | "destructive" | "success" | "warning"; text: string } } = {
+  pendente: { variant: 'warning', text: 'Pendente' },
+  paga: { variant: 'success', text: 'Paga' },
+  vencida: { variant: 'destructive', text: 'Vencida' },
+  cancelada: { variant: 'destructive', text: 'Cancelada' },
+  rascunho: { variant: 'secondary', text: 'Rascunho' },
+};
+
 
 export default function NotasPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -85,28 +102,51 @@ export default function NotasPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = () => {
     if (!user) {
-        setLoadingData(false);
-        return;
+      setLoadingData(false);
+      return () => {};
     }
     setLoadingData(true);
-    try {
-        const q = query(collection(db, "invoices"), where("userId", "==", user.uid), orderBy("date", "desc"));
-        const querySnapshot = await getDocs(q);
-        const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
-        setInvoices(invoicesData);
-    } catch (error) {
-        console.error("Error fetching invoices: ", error);
-        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as notas fiscais.' });
-    } finally {
-        setLoadingData(false);
-    }
-  }
-
+    const q = query(collection(db, 'invoices'), where('userId', '==', user.uid), orderBy('date', 'desc'));
+  
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const invoicesData = querySnapshot.docs.map(doc => {
+        const data = doc.data() as Omit<Invoice, 'id'>;
+        if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
+          return { id: doc.id, ...data, status: 'vencida' };
+        }
+        return { id: doc.id, ...data } as Invoice;
+      }) as Invoice[];
+      setInvoices(invoicesData);
+      setLoadingData(false);
+    }, (error) => {
+      console.error('Error fetching invoices: ', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as notas fiscais.' });
+      setLoadingData(false);
+    });
+  
+    return unsubscribe;
+  };
+  
   useEffect(() => {
-    fetchInvoices();
+    const unsubscribe = fetchInvoices();
+    return () => unsubscribe();
   }, [user]);
+
+  const handleUpdateStatus = async (invoiceId: string, status: Invoice['status']) => {
+    setLoadingAction(`status-${invoiceId}`);
+    try {
+      const invoiceRef = doc(db, 'invoices', invoiceId);
+      await updateDoc(invoiceRef, { status });
+      toast({ title: 'Status Atualizado!', description: `A nota foi marcada como ${status}.` });
+    } catch (error) {
+      console.error('Error updating status: ', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível atualizar o status.' });
+    } finally {
+      setLoadingAction(null);
+    }
+  };
 
 
   const handleDeleteInvoice = async (invoiceId: string) => {
@@ -114,8 +154,7 @@ export default function NotasPage() {
     try {
       await deleteDoc(doc(db, "invoices", invoiceId));
       toast({ title: 'Nota Fiscal Excluída!', description: 'A nota foi removida do seu histórico.' });
-      fetchInvoices(); // Re-fetch invoices to update the list
-      setDetailsDialogOpen(false); // Close dialog if open
+      setDetailsDialogOpen(false); 
     } catch (error) {
       console.error("Error deleting invoice: ", error);
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir a nota fiscal.' });
@@ -138,7 +177,6 @@ export default function NotasPage() {
         if (selectedInvoice.clientId) {
             const clientSnap = await getDoc(doc(db, "clients", selectedInvoice.clientId));
             if (clientSnap.exists()) {
-                // Remove non-numeric characters for the phone number
                 clientPhone = (clientSnap.data().phone || '').replace(/\D/g, '');
             }
         }
@@ -156,7 +194,6 @@ export default function NotasPage() {
         const danfeUrl = `${window.location.origin}/notas/${selectedInvoice.id}/danfe`;
         const message = `Olá, ${selectedInvoice.client}! Segue a sua nota fiscal no valor de R$ ${selectedInvoice.value}, emitida em ${selectedInvoice.date}. Você pode visualizá-la aqui: ${danfeUrl}`;
 
-        // Construct the WhatsApp URL
         const whatsappUrl = `https://wa.me/${clientPhone}?text=${encodeURIComponent(message)}`;
 
         window.open(whatsappUrl, '_blank');
@@ -218,8 +255,8 @@ export default function NotasPage() {
           body: emailData.body
         });
         
-        setDetailsDialogOpen(false); // Fecha o dialog de detalhes
-        setEmailDialogOpen(true); // Abre o dialog de email
+        setDetailsDialogOpen(false); 
+        setEmailDialogOpen(true);
 
     } catch (error) {
          toast({
@@ -235,7 +272,6 @@ export default function NotasPage() {
   
   const handleSendEmail = () => {
     setLoadingAction('send');
-    // Simulação de envio
     setTimeout(() => {
         toast({
             title: 'E-mail enviado com sucesso!',
@@ -293,16 +329,8 @@ export default function NotasPage() {
                     </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    <Badge
-                      variant={
-                        invoice.status === 'autorizada'
-                          ? 'default'
-                          : invoice.status === 'cancelada'
-                            ? 'destructive'
-                            : 'secondary'
-                      }
-                    >
-                      {invoice.status}
+                    <Badge variant={statusConfig[invoice.status].variant}>
+                      {statusConfig[invoice.status].text}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
@@ -310,14 +338,38 @@ export default function NotasPage() {
                   </TableCell>
                   <TableCell className="hidden text-right sm:table-cell">R$ {invoice.value}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenDetails(invoice)}
-                    >
-                      <Eye className="mr-0 h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Detalhes</span>
-                    </Button>
+                    <DropdownMenu>
+                       <DropdownMenuTrigger asChild>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                         >
+                           <MoreHorizontal className="h-4 w-4" />
+                           <span className="sr-only">Ações</span>
+                         </Button>
+                       </DropdownMenuTrigger>
+                       <DropdownMenuContent align="end">
+                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                         <DropdownMenuItem onClick={() => handleOpenDetails(invoice)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ver Detalhes
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => handleOpenDanfe(invoice.id)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Baixar DANFE
+                         </DropdownMenuItem>
+                         <DropdownMenuSeparator />
+                         <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleUpdateStatus(invoice.id, 'paga')} disabled={invoice.status === 'paga'}>
+                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                            Marcar como Paga
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateStatus(invoice.id, 'pendente')} disabled={invoice.status === 'pendente'}>
+                             <Clock className="mr-2 h-4 w-4 text-yellow-500" />
+                            Marcar como Pendente
+                          </DropdownMenuItem>
+                       </DropdownMenuContent>
+                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
@@ -374,21 +426,19 @@ export default function NotasPage() {
                 </span>
                 <span className="col-span-2">{selectedInvoice.date}</span>
               </div>
+              {selectedInvoice.dueDate && (
+                  <div className="grid grid-cols-3 items-center gap-4">
+                      <span className="font-semibold text-muted-foreground">Vencimento:</span>
+                      <span className="col-span-2">{selectedInvoice.dueDate}</span>
+                  </div>
+              )}
               <div className="grid grid-cols-3 items-center gap-4">
                 <span className="font-semibold text-muted-foreground">
                   Status:
                 </span>
                 <span className="col-span-2">
-                   <Badge
-                      variant={
-                        selectedInvoice.status === 'autorizada'
-                          ? 'default'
-                          : selectedInvoice.status === 'cancelada'
-                            ? 'destructive'
-                            : 'secondary'
-                      }
-                    >
-                      {selectedInvoice.status}
+                   <Badge variant={statusConfig[selectedInvoice.status].variant}>
+                      {statusConfig[selectedInvoice.status].text}
                     </Badge>
                 </span>
               </div>
@@ -425,9 +475,6 @@ export default function NotasPage() {
                 </AlertDialog>
 
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end flex-wrap">
-                    <Button onClick={() => handleOpenDanfe(selectedInvoice.id)} variant="secondary" size="sm">
-                        <Download className="mr-2 h-4 w-4" /> Baixar DANFE
-                    </Button>
                     <Button onClick={handleShareOnWhatsApp} variant="secondary" size="sm" disabled={loadingAction === 'whatsapp'}>
                         {loadingAction === 'whatsapp' ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <WhatsAppIcon />}
                         <span className="ml-2">WhatsApp</span>
@@ -493,7 +540,3 @@ export default function NotasPage() {
     </div>
   );
 }
-
-    
-
-    

@@ -11,10 +11,11 @@ export type Invoice = {
   client: string;
   clientId: string | null;
   date: string;
-  status: 'autorizada' | 'cancelada' | 'rascunho';
+  status: 'pendente' | 'paga' | 'vencida' | 'cancelada' | 'rascunho';
   value: string;
   userId: string;
   items: InvoiceItem[];
+  dueDate?: string;
 };
 
 export type Client = {

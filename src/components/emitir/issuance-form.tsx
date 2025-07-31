@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { ArrowLeft, Send, Trash2, Search, PlusCircle } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Search, PlusCircle, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice, ExtractedData, Client, InvoiceItem } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
@@ -26,6 +26,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { Calendar } from '../ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 
 const itemSchema = z.object({
@@ -42,6 +45,7 @@ const formSchema = z.object({
     clientId: z.string().optional(),
   }),
   items: z.array(itemSchema).min(1, 'Adicione pelo menos um item.'),
+  dueDate: z.date().optional(),
 });
 
 interface IssuanceFormProps {
@@ -67,6 +71,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
         clientId: ''
       },
       items: initialData?.items && initialData.items.length > 0 ? initialData.items : [{ description: '', quantity: 1, unitPrice: 0 }],
+      dueDate: undefined,
     },
   });
 
@@ -119,10 +124,11 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
       client: values.destinatario.nome,
       clientId: values.destinatario.clientId || null,
       date: new Date().toISOString().split('T')[0],
-      status: 'autorizada',
+      status: 'pendente',
       value: totalValue.toFixed(2).replace('.',','),
       userId: user.uid,
-      items: values.items
+      items: values.items,
+      dueDate: values.dueDate ? values.dueDate.toISOString().split('T')[0] : undefined,
     }
 
     try {
@@ -235,6 +241,45 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                     <FormMessage />
                     </FormItem>
                 )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>Data de Vencimento</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                >
+                                {field.value ? (
+                                    format(field.value, "PPP")
+                                ) : (
+                                    <span>Selecione uma data</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date < new Date()}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                 />
             </CardContent>
             </Card>

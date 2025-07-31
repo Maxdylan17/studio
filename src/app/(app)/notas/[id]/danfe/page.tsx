@@ -11,6 +11,16 @@ import { Printer, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+
+const statusConfig: { [key in Invoice['status']]: { variant: "default" | "secondary" | "destructive" | "success" | "warning"; text: string } } = {
+  pendente: { variant: 'warning', text: 'Pendente' },
+  paga: { variant: 'success', text: 'Paga' },
+  vencida: { variant: 'destructive', text: 'Vencida' },
+  cancelada: { variant: 'destructive', text: 'Cancelada' },
+  rascunho: { variant: 'secondary', text: 'Rascunho' },
+};
+
 
 export default function DanfePage({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = React.useState<Invoice | null>(null);
@@ -33,7 +43,6 @@ export default function DanfePage({ params }: { params: { id: string } }) {
 
         if (!invoiceSnap.exists()) {
           toast({ variant: 'destructive', title: 'Erro', description: 'Nota Fiscal não encontrada.' });
-          // Don't redirect, just show an error state, as this page might be accessed publicly.
           setLoading(false);
           return;
         }
@@ -166,6 +175,28 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                         </div>
                     </header>
 
+                    {/* Invoice Details */}
+                    <section>
+                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border p-4 rounded-md bg-muted/50">
+                            <div>
+                                <p className="text-muted-foreground">STATUS</p>
+                                <Badge variant={statusConfig[invoice.status].variant} className="text-base">
+                                    {statusConfig[invoice.status].text}
+                                </Badge>
+                            </div>
+                            <div>
+                                <p className="text-muted-foreground">DATA DE EMISSÃO</p>
+                                <p className="font-medium">{invoice.date}</p>
+                            </div>
+                            {invoice.dueDate && (
+                                <div>
+                                    <p className="text-muted-foreground">DATA DE VENCIMENTO</p>
+                                    <p className="font-medium">{invoice.dueDate}</p>
+                                </div>
+                            )}
+                         </div>
+                    </section>
+
                     {/* Recipient */}
                     <section>
                         <h4 className="font-semibold mb-2 text-base">Destinatário / Remetente</h4>
@@ -179,7 +210,7 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                                 <p className="font-medium">{client?.cpf_cnpj}</p>
                             </div>
                              <div>
-                                <p className="text-muted-foreground">ENDEREÇO</p>
+                                <p className="text-muted-foreground">ENDEREÇO/E-MAIL</p>
                                 <p className="font-medium">{client?.email}</p>
                             </div>
                             <div>
@@ -245,5 +276,3 @@ export default function DanfePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    
