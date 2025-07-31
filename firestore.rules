@@ -3,44 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Regras de Segurança
-    // Permite que usuários autenticados criem, leiam, atualizem e deletem
-    // documentos (clientes, notas) que pertencem a eles.
-    match /clients/{clientId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-    }
-
-    match /invoices/{invoiceId} {
-       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-    }
-    
-    match /settings/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null;
     }
   }
-}
-
-// Índices Compostos do Firestore
-{
-  "indexes": [
-    {
-      "collectionGroup": "invoices",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "date",
-          "order": "DESCENDING"
-        }
-      ]
-    }
-  ]
 }
