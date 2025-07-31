@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ type Message = {
 const examplePrompts = [
     "Liste minhas 5 últimas notas fiscais emitidas.",
     "Qual cliente mais recente foi cadastrado?",
-    "Qual o valor total das notas para o cliente 'Empresa Exemplo'?",
+    "Cancele a última nota fiscal para o cliente 'Empresa Exemplo'.",
     "Existem notas fiscais com status 'cancelada'?"
 ]
 
@@ -28,17 +28,27 @@ export default function RelatoriosPage() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
+    const messagesEndRef = useRef<null | HTMLDivElement>(null)
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+
+    useEffect(() => {
+        scrollToBottom()
+    }, [messages]);
 
     const handleSendMessage = async (prompt?: string) => {
-        const userMessage = prompt || input;
-        if (!userMessage.trim()) return;
+        const userMessageContent = prompt || input;
+        if (!userMessageContent.trim()) return;
         
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+        const newMessages: Message[] = [...messages, { role: 'user', content: userMessageContent }];
+        setMessages(newMessages);
         setLoading(true);
         setInput('');
 
         try {
-            const result = await handleConversationalAnalysis({ query: userMessage });
+            const result = await handleConversationalAnalysis({ query: userMessageContent, history: newMessages.slice(0, -1) });
             setMessages(prev => [...prev, { role: 'assistant', content: result.answer }]);
         } catch (error) {
             console.error(error);
@@ -59,7 +69,7 @@ export default function RelatoriosPage() {
                 <BrainCircuit className="h-10 w-10 text-primary" />
                 <h1 className="text-3xl font-bold tracking-tight">Assistente Fiscal IA</h1>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                    Faça perguntas em linguagem natural sobre seus dados de faturamento.
+                    Faça perguntas e execute ações em linguagem natural sobre seus dados de faturamento.
                 </p>
             </div>
             
@@ -70,7 +80,7 @@ export default function RelatoriosPage() {
                         <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full p-4">
                             <MessageSquare className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted-foreground/30" />
                             <h3 className="text-lg font-semibold mb-2">Como posso ajudar?</h3>
-                            <p className="text-sm max-w-md mx-auto mb-6">Faça perguntas sobre suas notas fiscais, faturas e dados de faturamento.</p>
+                            <p className="text-sm max-w-md mx-auto mb-6">Faça perguntas ou dê comandos sobre suas notas fiscais, faturas e clientes.</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl mx-auto">
                                 {examplePrompts.map(prompt => (
                                     <Button 
@@ -124,11 +134,12 @@ export default function RelatoriosPage() {
                             </div>
                         </div>
                     )}
+                    <div ref={messagesEndRef} />
                 </CardContent>
                 <div className="border-t p-2 sm:p-4">
                     <div className="relative">
                         <Input
-                            placeholder="Qual o valor da minha última fatura?"
+                            placeholder="Ex: 'Cancele a última nota para a Empresa Exemplo'"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -151,4 +162,3 @@ export default function RelatoriosPage() {
         </div>
     );
 }
-
