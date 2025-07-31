@@ -112,6 +112,12 @@ export default function RecorrenciasPage() {
     let generatedCount = 0;
     const now = new Date();
 
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Usuário não encontrado' });
+      setLoadingAction(false);
+      return;
+    }
+
     for (const recurrence of recurrences) {
         if (recurrence.status !== 'active') continue;
 
@@ -133,7 +139,7 @@ export default function RecorrenciasPage() {
                     date: formatISO(now, { representation: 'date' }),
                     status: 'pendente',
                     value: recurrence.totalValue.toFixed(2).replace('.',','),
-                    userId: user!.uid,
+                    userId: user.uid,
                     items: recurrence.items,
                     recurrenceId: recurrence.id
                 };
@@ -165,7 +171,7 @@ export default function RecorrenciasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Faturas Recorrentes</h1>
         <div className="flex items-center gap-2">
-            <Button onClick={handleRunRecurrences} variant="outline" disabled={loadingAction}>
+            <Button onClick={handleRunRecurrences} variant="outline" disabled={loadingAction || loadingData}>
                 {loadingAction ? 'Gerando...' : 'Gerar Faturas Pendentes'}
             </Button>
             <Button onClick={() => handleOpenForm()}>
