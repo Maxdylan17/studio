@@ -16,6 +16,7 @@ export type Invoice = {
   userId: string;
   items: InvoiceItem[];
   dueDate?: string;
+  recurrenceId?: string;
 };
 
 export type Client = {
@@ -27,6 +28,21 @@ export type Client = {
   userId: string;
   avatarUrl?: string;
 };
+
+export type Recurrence = {
+    id: string;
+    userId: string;
+    clientId: string;
+    clientName: string;
+    items: InvoiceItem[];
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number;
+    startDate: string; // ISO date string
+    endDate: string | null; // ISO date string
+    lastGeneratedDate: string | null; // ISO date string
+    status: 'active' | 'paused' | 'completed';
+    totalValue: number;
+}
 
 export type ExtractedData = {
     recipient: {

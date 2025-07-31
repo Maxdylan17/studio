@@ -9,7 +9,8 @@ import {
   Settings,
   Users,
   BrainCircuit,
-  ScanLine
+  ScanLine,
+  Repeat
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +21,7 @@ const links = [
   { href: '/emitir', label: 'Emitir Nota', icon: FilePlus2 },
   { href: '/notas', label: 'Notas Fiscais', icon: FileText },
   { href: '/clientes', label: 'Clientes', icon: Users },
+  { href: '/recorrencias', label: 'Recorrências', icon: Repeat },
   { href: '/captura', label: 'Captura de Dados', icon: ScanLine },
   { href: '/relatorios', label: 'Assistente IA', icon: BrainCircuit },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
