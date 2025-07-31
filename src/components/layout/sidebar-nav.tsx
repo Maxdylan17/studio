@@ -19,9 +19,8 @@ import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '../ui/sidebar';
 const links = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/emitir', label: 'Emitir Nota', icon: FilePlus2 },
-  { href: '/notas', label: 'Notas Fiscais', icon: FileText },
+  { href: '/notas', label: 'Faturas', icon: FileText },
   { href: '/clientes', label: 'Clientes', icon: Users },
-  { href: '/recorrencias', label: 'Recorrências', icon: Repeat },
   { href: '/captura', label: 'Captura de Dados', icon: ScanLine },
   { href: '/relatorios', label: 'Assistente IA', icon: BrainCircuit },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
