@@ -7,6 +7,7 @@ import { conversationalAnalysis } from '@/ai/flows/conversational-analysis';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
 import { generateInvoiceEmail } from '@/ai/flows/generate-invoice-email';
 import { processDocument } from '@/ai/flows/process-document-flow';
+import { smartIssuance } from '@/ai/flows/smart-issuance';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -25,6 +26,7 @@ import type {
 import type { GenerateAvatarInput } from '@/ai/flows/schemas/generate-avatar-schemas';
 import type { GenerateInvoiceEmailInput, GenerateInvoiceEmailOutput } from '@/ai/flows/schemas/generate-invoice-email-schemas';
 import type { ProcessDocumentInput, ProcessDocumentOutput } from '@/ai/flows/schemas/process-document-schemas';
+import type { SmartIssuanceInput, SmartIssuanceOutput } from '@/ai/flows/smart-issuance';
 
 
 export async function handleAnalyzeIssuanceTrends(
@@ -113,4 +115,16 @@ export async function handleProcessDocument(
         console.error('Error processing document:', error);
         throw new Error('Failed to process document with AI.');
     }
+}
+
+export async function handleSmartIssuance(
+  input: SmartIssuanceInput
+): Promise<SmartIssuanceOutput> {
+  try {
+    const result = await smartIssuance(input);
+    return result;
+  } catch (error) {
+    console.error('Error with smart issuance:', error);
+    throw new Error('Failed to generate items from text.');
+  }
 }
