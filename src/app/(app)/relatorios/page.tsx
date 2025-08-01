@@ -139,7 +139,7 @@ export default function RelatoriosPage() {
                 <div className="border-t p-2 sm:p-4">
                     <div className="relative">
                         <Input
-                            placeholder="Ex: 'Cancele a última nota para a Empresa Exemplo'"
+                            placeholder="Ex: 'Liste as notas fiscais para a Empresa Exemplo'"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
