@@ -10,6 +10,12 @@ export type Invoice = {
   key: string;
   client: string;
   clientId: string | null;
+  destinatario: {
+    nome: string;
+    cpf_cnpj: string;
+    endereco?: string;
+    clientId?: string;
+  }
   date: string;
   status: 'pendente' | 'paga' | 'vencida' | 'cancelada' | 'rascunho';
   value: number;

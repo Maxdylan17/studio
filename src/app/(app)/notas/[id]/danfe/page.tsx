@@ -22,7 +22,7 @@ const statusConfig: { [key in Invoice['status']]: { variant: "default" | "second
 };
 
 
-export default function DanfePage({ params }: { params: { id: string } }) {
+export default function DanfePage({ params }: { params: { id:string } }) {
   const [invoice, setInvoice] = React.useState<Invoice | null>(null);
   const [client, setClient] = React.useState<Client | null>(null);
   const [companySettings, setCompanySettings] = React.useState<{ name: string; cnpj: string } | null>(null);
@@ -44,6 +44,7 @@ export default function DanfePage({ params }: { params: { id: string } }) {
         if (!invoiceSnap.exists()) {
           toast({ variant: 'destructive', title: 'Erro', description: 'Nota Fiscal não encontrada.' });
           setLoading(false);
+          router.push('/dashboard');
           return;
         }
         
@@ -159,62 +160,64 @@ export default function DanfePage({ params }: { params: { id: string } }) {
             </Button>
         </div>
 
-        <div className="danfe-container border bg-card p-8 rounded-lg shadow-sm">
-                <div className="space-y-6 text-sm">
+        <div className="danfe-container border bg-card p-6 sm:p-8 rounded-lg shadow-sm">
+                <div className="space-y-6 text-xs sm:text-sm">
                     {/* Header */}
-                    <header className="flex justify-between items-start pb-4 border-b">
+                    <header className="flex flex-col sm:flex-row justify-between items-start pb-4 border-b gap-4">
                         <div>
-                            <h2 className="text-2xl font-bold">{companySettings?.name}</h2>
+                            <h2 className="text-lg sm:text-xl font-bold">{companySettings?.name}</h2>
                             <p className="text-muted-foreground">Rua da Tecnologia, 123 - Tecnovale, SP</p>
                             <p className="text-muted-foreground">CNPJ: {companySettings?.cnpj}</p>
                         </div>
-                        <div className="text-right">
-                            <h3 className="text-lg font-bold">DANFE</h3>
-                            <p>Documento Auxiliar da Nota Fiscal Eletrônica</p>
-                            <p className="font-mono text-xs mt-2 bg-muted p-2 rounded-md">{invoice?.key}</p>
+                        <div className="text-left sm:text-right border p-2 rounded-md w-full sm:w-auto">
+                            <h3 className="text-base font-bold">DANFE</h3>
+                            <p className='text-muted-foreground'>Doc. Auxiliar da NF-e</p>
+                            <p className="font-mono text-xs mt-1 break-all">{invoice?.key}</p>
                         </div>
                     </header>
 
                     {/* Invoice Details */}
-                    <section>
-                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border p-4 rounded-md bg-muted/50">
-                            <div>
-                                <p className="text-muted-foreground">STATUS</p>
-                                <Badge variant={statusConfig[invoice.status].variant} className="text-base">
-                                    {statusConfig[invoice.status].text}
-                                </Badge>
+                    <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className='border p-3 rounded-md'>
+                            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Status</p>
+                             <Badge variant={statusConfig[invoice.status].variant} className="mt-1 text-sm">
+                                {statusConfig[invoice.status].text}
+                            </Badge>
+                        </div>
+                         <div className='border p-3 rounded-md'>
+                            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Natureza da Operação</p>
+                            <p className="font-medium">{invoice.naturezaOperacao}</p>
+                        </div>
+                         <div className='border p-3 rounded-md'>
+                            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Data de Emissão</p>
+                            <p className="font-medium">{invoice.date}</p>
+                        </div>
+                        {invoice.dueDate && (
+                             <div className='border p-3 rounded-md'>
+                                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Data de Vencimento</p>
+                                <p className="font-medium">{invoice.dueDate}</p>
                             </div>
-                            <div>
-                                <p className="text-muted-foreground">DATA DE EMISSÃO</p>
-                                <p className="font-medium">{invoice.date}</p>
-                            </div>
-                            {invoice.dueDate && (
-                                <div>
-                                    <p className="text-muted-foreground">DATA DE VENCIMENTO</p>
-                                    <p className="font-medium">{invoice.dueDate}</p>
-                                </div>
-                            )}
-                         </div>
+                        )}
                     </section>
 
                     {/* Recipient */}
                     <section>
-                        <h4 className="font-semibold mb-2 text-base">Destinatário / Remetente</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border p-4 rounded-md">
+                        <h4 className="font-bold mb-2 text-base border-b pb-1">Destinatário / Remetente</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                             <div>
-                                <p className="text-muted-foreground">NOME/RAZÃO SOCIAL</p>
+                                <p className="text-muted-foreground text-xs">NOME/RAZÃO SOCIAL</p>
                                 <p className="font-medium">{client?.name ?? invoice?.client}</p>
                             </div>
                              <div>
-                                <p className="text-muted-foreground">CPF/CNPJ</p>
+                                <p className="text-muted-foreground text-xs">CPF/CNPJ</p>
                                 <p className="font-medium">{client?.cpf_cnpj}</p>
                             </div>
-                             <div>
-                                <p className="text-muted-foreground">ENDEREÇO/E-MAIL</p>
-                                <p className="font-medium">{client?.email}</p>
+                             <div className='col-span-full'>
+                                <p className="text-muted-foreground text-xs">ENDEREÇO/E-MAIL</p>
+                                <p className="font-medium">{client?.email ?? invoice.destinatario.endereco}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">TELEFONE</p>
+                                <p className="text-muted-foreground text-xs">TELEFONE</p>
                                 <p className="font-medium">{client?.phone}</p>
                             </div>
                         </div>
@@ -223,24 +226,24 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                     {/* Items */}
                     {items && items.length > 0 && (
                         <section>
-                            <h4 className="font-semibold mb-2 text-base">Produtos / Serviços</h4>
-                            <div className="border rounded-md">
-                                <table className="w-full">
+                            <h4 className="font-bold mb-2 text-base border-b pb-1">Cálculo do Imposto / Itens</h4>
+                            <div className="border rounded-md overflow-hidden">
+                                <table className="w-full text-left">
                                     <thead className="bg-muted">
                                         <tr className="border-b">
-                                            <th className="p-2 text-left font-medium">Descrição</th>
-                                            <th className="p-2 w-24 text-center font-medium">Qtd.</th>
-                                            <th className="p-2 w-32 text-right font-medium">Valor Unit.</th>
-                                            <th className="p-2 w-32 text-right font-medium">Valor Total</th>
+                                            <th className="p-2 font-medium">Descrição do Produto/Serviço</th>
+                                            <th className="p-2 w-20 text-center font-medium">Qtd.</th>
+                                            <th className="p-2 w-28 text-right font-medium">Valor Unit.</th>
+                                            <th className="p-2 w-28 text-right font-medium">Valor Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {items.map((item, index) => (
                                             <tr key={index} className="border-b last:border-none">
-                                                <td className="p-2">{item.description}</td>
-                                                <td className="p-2 text-center">{item.quantity}</td>
-                                                <td className="p-2 text-right">{item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                                <td className="p-2 text-right">{(item.quantity * item.unitPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                                <td className="p-2 align-top">{item.description}</td>
+                                                <td className="p-2 text-center align-top">{item.quantity}</td>
+                                                <td className="p-2 text-right align-top">{item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                                <td className="p-2 text-right align-top">{(item.quantity * item.unitPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -253,13 +256,13 @@ export default function DanfePage({ params }: { params: { id: string } }) {
                     {/* Footer */}
                     <footer className="pt-4">
                         <div className="flex justify-end">
-                            <div className="w-full max-w-sm space-y-2">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Valor Total dos Produtos/Serviços:</span>
+                            <div className="w-full max-w-xs space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Valor Total dos Itens:</span>
                                     <span className="font-medium">{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                                 </div>
                                 <Separator />
-                                <div className="flex justify-between text-lg font-bold">
+                                <div className="flex justify-between items-center text-base font-bold">
                                     <span>VALOR TOTAL DA NOTA:</span>
                                     <span>{invoice.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                                 </div>
