@@ -17,10 +17,10 @@ type Message = {
 }
 
 const examplePrompts = [
-    "Liste minhas 5 últimas notas fiscais emitidas.",
-    "Qual cliente mais recente foi cadastrado?",
-    "Cancele a última nota fiscal para o cliente 'Empresa Exemplo'.",
-    "Existem notas fiscais com status 'cancelada'?"
+    "Qual o valor total faturado este mês?",
+    "Liste todas as notas pendentes para a 'Empresa Exemplo'.",
+    "Cancele a nota fiscal com a chave de acesso XYZ.",
+    "Reemita a última nota fiscal para o 'Cliente Y'."
 ]
 
 export default function RelatoriosPage() {
