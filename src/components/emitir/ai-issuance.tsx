@@ -162,7 +162,7 @@ export function AiIssuance({ onExtractionComplete }: AiIssuanceProps) {
                      <div className="grid w-full gap-2">
                         <Textarea
                             id="smart-description"
-                            placeholder="Ex: Criação de um website institucional com 3 páginas, design responsivo, e um ano de hospedagem."
+                            placeholder="Ex: 2 caixas de parafusos, 1 furadeira e 3h de consultoria de instalação."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={5}
