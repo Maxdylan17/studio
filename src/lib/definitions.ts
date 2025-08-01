@@ -16,6 +16,7 @@ export type Invoice = {
   userId: string;
   items: InvoiceItem[];
   dueDate?: string;
+  naturezaOperacao: string;
 };
 
 export type Client = {

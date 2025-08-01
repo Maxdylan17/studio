@@ -29,6 +29,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 const itemSchema = z.object({
@@ -38,6 +39,7 @@ const itemSchema = z.object({
 });
 
 const formSchema = z.object({
+  naturezaOperacao: z.string().min(1, "Selecione a natureza da operação."),
   destinatario: z.object({
     nome: z.string().min(2, 'Nome/Razão Social é obrigatório'),
     cpf_cnpj: z.string().min(11, 'CPF/CNPJ inválido'),
@@ -64,6 +66,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      naturezaOperacao: 'Venda de mercadoria',
       destinatario: {
         nome: initialData?.recipient?.name || '',
         cpf_cnpj: initialData?.recipient?.document || '',
@@ -129,6 +132,7 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
       userId: user.uid,
       items: values.items,
       dueDate: values.dueDate ? values.dueDate.toISOString().split('T')[0] : undefined,
+      naturezaOperacao: values.naturezaOperacao,
     }
 
     try {
@@ -161,8 +165,8 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                         <span className="sr-only">Voltar</span>
                     </Button>
                     <div>
-                        <CardTitle>Revisar e Emitir</CardTitle>
-                        <CardDescription>Verifique os dados extraídos pela IA e confirme a emissão.</CardDescription>
+                        <CardTitle>Gerador de Nota Fiscal Eletrônica (NF-e)</CardTitle>
+                        <CardDescription>Preencha os dados para gerar e emitir a nota fiscal.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -171,76 +175,32 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
         <div className="grid lg:grid-cols-2 gap-6">
             <Card>
             <CardHeader>
-                <CardTitle>Destinatário</CardTitle>
+                <CardTitle>Dados Gerais da NF-e</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                 <Popover open={openClientSearch} onOpenChange={setOpenClientSearch}>
-                    <PopoverTrigger asChild>
-                       <Button variant="outline" className="w-full justify-start">
-                           <Search className="mr-2 h-4 w-4" />
-                           Buscar Cliente Existente
-                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" side="bottom" align="start">
-                        <Command>
-                            <CommandInput 
-                                onValueChange={setClientSearchTerm} 
-                                placeholder="Digite o nome do cliente..."
-                             />
-                            <CommandList>
-                                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                                <CommandGroup>
-                                    {foundClients.map(client => (
-                                        <CommandItem key={client.id} onSelect={() => handleSelectClient(client)}>
-                                            {client.name}
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </PopoverContent>
-                 </Popover>
-
-                 <Separator />
-
                 <FormField
-                    control={form.control}
-                    name="destinatario.nome"
-                    render={({ field }) => (
+                  control={form.control}
+                  name="naturezaOperacao"
+                  render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Nome/Razão Social</FormLabel>
+                      <FormLabel>Natureza da Operação</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                        <Input placeholder="Nome do cliente" {...field} />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo de operação" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
+                        <SelectContent>
+                          <SelectItem value="Venda de mercadoria">Venda de mercadoria</SelectItem>
+                          <SelectItem value="Prestação de serviço">Prestação de serviço</SelectItem>
+                          <SelectItem value="Remessa">Remessa</SelectItem>
+                          <SelectItem value="Retorno">Retorno</SelectItem>
+                          <SelectItem value="Devolução">Devolução</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
                     </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="destinatario.cpf_cnpj"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>CPF/CNPJ</FormLabel>
-                        <FormControl>
-                        <Input placeholder="000.000.000-00" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                control={form.control}
-                name="destinatario.endereco"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Endereço / E-mail</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Rua, Número, Bairro / email@exemplo.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
+                  )}
                 />
                  <FormField
                     control={form.control}
@@ -280,6 +240,75 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
                         <FormMessage />
                         </FormItem>
                     )}
+                />
+                
+                <Separator/>
+
+                 <Popover open={openClientSearch} onOpenChange={setOpenClientSearch}>
+                    <PopoverTrigger asChild>
+                       <Button variant="outline" className="w-full justify-start">
+                           <Search className="mr-2 h-4 w-4" />
+                           Buscar Cliente Existente
+                       </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" side="bottom" align="start">
+                        <Command>
+                            <CommandInput 
+                                onValueChange={setClientSearchTerm} 
+                                placeholder="Digite o nome do cliente..."
+                             />
+                            <CommandList>
+                                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                    {foundClients.map(client => (
+                                        <CommandItem key={client.id} onSelect={() => handleSelectClient(client)}>
+                                            {client.name}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                 </Popover>
+
+                <FormField
+                    control={form.control}
+                    name="destinatario.nome"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Nome/Razão Social do Destinatário</FormLabel>
+                        <FormControl>
+                        <Input placeholder="Nome do cliente" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="destinatario.cpf_cnpj"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>CPF/CNPJ do Destinatário</FormLabel>
+                        <FormControl>
+                        <Input placeholder="000.000.000-00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                control={form.control}
+                name="destinatario.endereco"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Endereço / E-mail do Destinatário</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Rua, Número, Bairro / email@exemplo.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
                 />
             </CardContent>
             </Card>
