@@ -37,7 +37,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
-import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2, MoreHorizontal, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2, MoreHorizontal, CheckCircle, Clock } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -132,7 +132,7 @@ export default function NotasPage() {
   useEffect(() => {
     const unsubscribe = fetchInvoices();
     return () => unsubscribe();
-  }, [user]);
+  }, [user, toast]);
 
   const handleUpdateStatus = async (invoiceId: string, status: Invoice['status']) => {
     setLoadingAction(`status-${invoiceId}`);
@@ -540,3 +540,5 @@ export default function NotasPage() {
     </div>
   );
 }
+
+    
