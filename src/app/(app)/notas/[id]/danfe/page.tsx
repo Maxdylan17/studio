@@ -67,13 +67,13 @@ export default function DanfePage({ params }: { params: { id: string } }) {
           if (settingsSnap.exists()) {
               const settingsData = settingsSnap.data();
               setCompanySettings({
-                  name: settingsData.companyName || 'Sua Empresa',
-                  cnpj: settingsData.cnpj || 'Seu CNPJ'
+                  name: settingsData.companyName || 'Sua Empresa (Configure em Configurações)',
+                  cnpj: settingsData.cnpj || 'Seu CNPJ (Configure em Configurações)'
               });
           } else {
                setCompanySettings({
-                  name: 'Sua Empresa',
-                  cnpj: 'Seu CNPJ'
+                  name: 'Sua Empresa (Configure em Configurações)',
+                  cnpj: 'Seu CNPJ (Configure em Configurações)'
               });
           }
         }
