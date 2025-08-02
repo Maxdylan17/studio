@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { IssuanceForm } from '@/components/emitir/issuance-form';
-import { AiIssuance } from '@/components/emitir/ai-issuance';
+import { AiIssuance } from '@/components/emitir/smart-issuance';
 import type { ExtractedData } from '@/lib/definitions';
 
 
