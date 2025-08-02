@@ -1,27 +1,28 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { collection, getDocs, query, where, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc, addDoc, getDoc as getDocById } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import type { Invoice } from '@/lib/definitions';
 
 const getInvoiceByDetails = async (userId: string, details: { clientName?: string, invoiceKey?: string, invoiceId?: string }) => {
-    let q = query(collection(db, "invoices"), where('userId', '==', userId));
-
     if (details.invoiceId) {
-        const docSnap = await getDocs(query(q, where('__name__', '==', details.invoiceId)));
-        if (!docSnap.empty) {
-            const invoiceDoc = docSnap.docs[0];
-            return { id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice;
+        const docRef = doc(db, "invoices", details.invoiceId);
+        const docSnap = await getDocById(docRef);
+        if (docSnap.exists() && docSnap.data().userId === userId) {
+            return { id: docSnap.id, ...docSnap.data() } as Invoice;
         }
     }
+
+    let q = query(collection(db, "invoices"), where('userId', '==', userId));
 
     if (details.invoiceKey) {
         q = query(q, where('key', '==', details.invoiceKey));
     }
     
     if (details.clientName) {
+        // This is a simplified search. A more robust search might use multiple queries or a search service.
         q = query(q, where('client', '==', details.clientName));
     }
 
@@ -30,7 +31,8 @@ const getInvoiceByDetails = async (userId: string, details: { clientName?: strin
         return null;
     }
     
-    const invoiceDoc = querySnapshot.docs[0]; // Assume the first result is the one
+    // Assume the first result is the one for clientName/invoiceKey based searches.
+    const invoiceDoc = querySnapshot.docs[0]; 
     return { id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice;
 };
 
@@ -113,20 +115,21 @@ export const reissueInvoiceTool = ai.defineTool(
           return { success: false, message: 'Nota fiscal original não encontrada.' };
         }
   
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, key, status, date, ...restOfInvoice } = originalInvoice;
 
-        const newInvoice: Omit<Invoice, 'id'> = {
+        const newInvoiceData = {
             ...restOfInvoice,
             key: `NFE352407${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
             date: new Date().toISOString().split('T')[0],
             status: 'rascunho', // New invoice is a draft
         };
   
-        const docRef = await addDoc(collection(db, "invoices"), newInvoice);
+        const docRef = await addDoc(collection(db, "invoices"), newInvoiceData);
   
         return { 
             success: true, 
-            message: `Nota fiscal reemitida com sucesso como um rascunho. A nova nota fiscal para ${newInvoice.client} foi criada.`,
+            message: `Nota fiscal reemitida com sucesso como um rascunho. A nova nota fiscal para ${newInvoiceData.client} foi criada.`,
             newInvoiceId: docRef.id
         };
   
