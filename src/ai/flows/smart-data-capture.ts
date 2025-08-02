@@ -2,67 +2,46 @@
 'use server';
 
 /**
- * @fileOverview Smart Data Capture AI agent.
+ * @fileOverview A flow that processes a document image to extract both recipient data and invoice items.
  *
- * - smartDataCapture - A function that handles the data extraction from documents using OCR and generative AI.
- * - SmartDataCaptureInput - The input type for the smartDataCapture function.
- * - SmartDataCaptureOutput - The return type for the smartDataCapture function.
+ * - processDocument - A function that handles the unified data extraction.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {
+    ProcessDocumentInputSchema, 
+    ProcessDocumentOutputSchema, 
+    type ProcessDocumentInput, 
+    type ProcessDocumentOutput
+} from './schemas/process-document-schemas';
 
-const SmartDataCaptureInputSchema = z.object({
-  documentDataUri: z
-    .string()
-    .describe(
-      "A photo of a document (RG, CNH, etc.), as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-  documentType: z
-    .string()
-    .describe('The type of document being processed (e.g., RG, CNH).'),
-});
-export type SmartDataCaptureInput = z.infer<typeof SmartDataCaptureInputSchema>;
 
-const SmartDataCaptureOutputSchema = z.object({
-  extractedData: z
-    .record(z.string().optional())
-    .describe('A record of extracted data fields from the document. The keys should be in lowercase and without accents, e.g., "nome", "cpf", "rg", "cnh".'),
-});
-export type SmartDataCaptureOutput = z.infer<typeof SmartDataCaptureOutputSchema>;
-
-export async function smartDataCapture(input: SmartDataCaptureInput): Promise<SmartDataCaptureOutput> {
-  return smartDataCaptureFlow(input);
+export async function processDocument(input: ProcessDocumentInput): Promise<ProcessDocumentOutput> {
+  return processDocumentFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'smartDataCapturePrompt',
-  input: {schema: SmartDataCaptureInputSchema},
-  output: {schema: SmartDataCaptureOutputSchema},
-  prompt: `You are an expert data extraction specialist. Your task is to extract information from a document image and return it as a structured JSON object.
+  name: 'processDocumentPrompt',
+  input: {schema: ProcessDocumentInputSchema},
+  output: {schema: ProcessDocumentOutputSchema},
+  prompt: `You are an expert data extraction AI. Your task is to analyze an image of a document and return structured information for an invoice. The document could be anything from a formal invoice, a business card, to a handwritten note.
 
-The user has specified that the document type is: {{{documentType}}}.
-
-Analyze the following document image and extract the key information.
+Analyze the following document image:
 {{media url=documentDataUri}}
 
-Please extract the following fields if available:
-- Full Name (key: "nome")
-- CPF number (key: "cpf")
-- RG number (key: "rg")
-- CNH number (key: "cnh")
-- Date of Birth (key: "data_nascimento")
-- Filiation/Parents' names (key: "filiacao")
+Extract the following information:
+1.  **Recipient Data**: Identify the name, document number (CPF/CNPJ), and address of the client or recipient.
+2.  **Invoice Items**: Identify all products or services listed. For each item, determine its description, quantity, and estimate a realistic market unit price in BRL.
 
-Return the extracted data in a JSON object, using only the specified lowercase keys. If a field is not found, do not include it in the output.
+Return the extracted data as a single, structured JSON object. If some information (e.g., invoice items) is not present in the image, return the corresponding field as an empty array or with empty fields, but always extract any available recipient information.
 `,
 });
 
-const smartDataCaptureFlow = ai.defineFlow(
+const processDocumentFlow = ai.defineFlow(
   {
-    name: 'smartDataCaptureFlow',
-    inputSchema: SmartDataCaptureInputSchema,
-    outputSchema: SmartDataCaptureOutputSchema,
+    name: 'processDocumentFlow',
+    inputSchema: ProcessDocumentInputSchema,
+    outputSchema: ProcessDocumentOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);

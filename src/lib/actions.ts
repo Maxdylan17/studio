@@ -2,7 +2,7 @@
 'use server';
 
 import { analyzeIssuanceTrends } from '@/ai/flows/analyze-issuance-trends';
-import { smartDataCapture } from '@/ai/flows/smart-data-capture';
+import { processDocument as smartDataCapture } from '@/ai/flows/process-document-flow';
 import { conversationalAnalysis } from '@/ai/flows/conversational-analysis';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
 import { generateInvoiceEmail } from '@/ai/flows/generate-invoice-email';
@@ -16,9 +16,9 @@ import type {
   AnalyzeIssuanceTrendsOutput,
 } from '@/ai/flows/analyze-issuance-trends';
 import type {
-  SmartDataCaptureInput,
-  SmartDataCaptureOutput,
-} from '@/ai/flows/smart-data-capture';
+  ProcessDocumentInput as SmartDataCaptureInput,
+  ProcessDocumentOutput as SmartDataCaptureOutput,
+} from '@/ai/flows/schemas/process-document-schemas';
 import type {
     ConversationalAnalysisInput,
     ConversationalAnalysisOutput

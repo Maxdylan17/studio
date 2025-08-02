@@ -4,20 +4,19 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { handleSmartDataCapture } from '@/lib/actions';
+import { handleProcessDocument } from '@/lib/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import type { ExtractedClientData } from '@/lib/definitions';
+import type { ExtractedData } from '@/lib/definitions';
 import { RefreshCw, Upload, ScanSearch } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface AiCaptureProps {
-  onExtractionComplete: (data: ExtractedClientData) => void;
+  onExtractionComplete: (data: ExtractedData) => void;
 }
 
 export function AiCapture({ onExtractionComplete }: AiCaptureProps) {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState('CNH');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -26,8 +25,8 @@ export function AiCapture({ onExtractionComplete }: AiCaptureProps) {
   const processDataUri = async (dataUri: string) => {
     setLoading(true);
     try {
-       const result = await handleSmartDataCapture({ documentDataUri: dataUri, documentType });
-       if (Object.keys(result.extractedData).length === 0) {
+       const result = await handleProcessDocument({ documentDataUri: dataUri });
+       if (!result.recipient?.name && !result.recipient?.document && (!result.items || result.items.length === 0)) {
             toast({
                 variant: 'destructive',
                 title: 'Dados não encontrados',
@@ -38,7 +37,14 @@ export function AiCapture({ onExtractionComplete }: AiCaptureProps) {
                 title: 'Dados Extraídos!',
                 description: 'As informações foram processadas e preenchidas no formulário.',
             });
-            onExtractionComplete(result.extractedData);
+            onExtractionComplete({
+                recipient: {
+                    name: result.recipient.name,
+                    document: result.recipient.document,
+                    address: result.recipient.address,
+                },
+                items: result.items || []
+            });
        }
      } catch (error) {
        toast({
@@ -88,25 +94,15 @@ export function AiCapture({ onExtractionComplete }: AiCaptureProps) {
         <CardHeader>
             <CardTitle className="flex items-center gap-2">
                 <ScanSearch className="h-6 w-6 text-primary" />
-                Extrair Dados de Documento
+                Processar Documento com IA
             </CardTitle>
             <CardDescription>
-                Envie um documento de identificação para cadastrar um novo cliente automaticamente.
+                Envie um documento (nota, cartão de visita, rascunho) para extrair dados do cliente e itens.
             </CardDescription>
         </CardHeader>
         <CardContent>
             <div className="space-y-4">
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Select value={documentType} onValueChange={setDocumentType}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="CNH">CNH</SelectItem>
-                            <SelectItem value="RG">RG</SelectItem>
-                            <SelectItem value="Outro">Outro</SelectItem>
-                        </SelectContent>
-                    </Select>
+                 <div className="grid grid-cols-1 gap-4">
                      <Button asChild size="lg" variant="secondary">
                         <label className='cursor-pointer'>
                             <Upload className="mr-2 h-4 w-4" />

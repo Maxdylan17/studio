@@ -1,4 +1,5 @@
 
+
 export type InvoiceItem = {
     description: string;
     quantity: number;
@@ -44,12 +45,4 @@ export type ExtractedData = {
     items: InvoiceItem[]
 }
 
-export type ExtractedClientData = {
-    [key: string]: string | undefined;
-    nome?: string;
-    cpf?: string;
-    rg?: string;
-    cnh?: string;
-    data_nascimento?: string;
-    filiacao?: string;
-}
+export type ExtractedClientData = ExtractedData;

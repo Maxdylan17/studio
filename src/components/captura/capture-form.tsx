@@ -15,9 +15,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { ArrowLeft, UserPlus } from 'lucide-react';
+import { ArrowLeft, UserPlus, FilePen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { ExtractedClientData, Client } from '@/lib/definitions';
+import type { ExtractedData } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -34,7 +34,7 @@ const formSchema = z.object({
 });
 
 interface CaptureFormProps {
-    initialData: ExtractedClientData | null;
+    initialData: ExtractedData | null;
     onReset: () => void;
 }
 
@@ -46,8 +46,8 @@ export function CaptureForm({ initialData, onReset }: CaptureFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.nome || '',
-      cpf_cnpj: initialData?.cpf || initialData?.rg || '',
+      name: initialData?.recipient?.name || '',
+      cpf_cnpj: initialData?.recipient?.document || '',
       email: '',
       phone: ''
     },
@@ -84,7 +84,16 @@ export function CaptureForm({ initialData, onReset }: CaptureFormProps) {
                 });
             });
 
-        router.push(`/clientes/${docRef.id}`);
+        // If items were extracted, redirect to issuance form with client pre-filled
+        if (initialData?.items && initialData.items.length > 0) {
+            const queryParams = new URLSearchParams({
+                clientId: docRef.id,
+                items: JSON.stringify(initialData.items)
+            }).toString();
+            router.push(`/emitir?${queryParams}`);
+        } else {
+            router.push(`/clientes/${docRef.id}`);
+        }
 
     } catch (error) {
         console.error("Error adding client: ", error);
@@ -94,6 +103,16 @@ export function CaptureForm({ initialData, onReset }: CaptureFormProps) {
           description: 'Não foi possível salvar o cliente. Tente novamente.',
         });
     }
+  }
+  
+  const handleRedirectToIssuance = () => {
+    if (!initialData?.items || initialData.items.length === 0) return;
+    const queryParams = new URLSearchParams({
+        clientName: form.getValues('name'),
+        clientDoc: form.getValues('cpf_cnpj'),
+        items: JSON.stringify(initialData.items)
+    }).toString();
+    router.push(`/emitir?${queryParams}`);
   }
 
   return (
@@ -107,8 +126,8 @@ export function CaptureForm({ initialData, onReset }: CaptureFormProps) {
                         <span className="sr-only">Voltar</span>
                     </Button>
                     <div>
-                        <CardTitle>Revisar e Cadastrar Cliente</CardTitle>
-                        <CardDescription>Verifique os dados extraídos, preencha o restante e confirme o cadastro.</CardDescription>
+                        <CardTitle>Revisar e Cadastrar</CardTitle>
+                        <CardDescription>Verifique os dados extraídos, preencha o restante e confirme.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -176,15 +195,21 @@ export function CaptureForm({ initialData, onReset }: CaptureFormProps) {
           </CardContent>
         </Card>
         
-        <div className="flex justify-end">
-          <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? 'Cadastrando...' : (
-              <>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Cadastrar Cliente
-              </>
-            )}
-          </Button>
+        <div className="flex justify-between items-center">
+            {initialData?.items && initialData.items.length > 0 ? (
+                 <Button type="button" variant="secondary" onClick={handleRedirectToIssuance} disabled={!form.formState.isValid}>
+                    <FilePen className="mr-2 h-4 w-4" />
+                    Criar Fatura com {initialData.items.length} Itens
+                </Button>
+            ): <div></div>}
+            <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Cadastrando...' : (
+                <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Cadastrar Cliente
+                </>
+                )}
+            </Button>
         </div>
       </form>
     </Form>
