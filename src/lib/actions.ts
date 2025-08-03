@@ -2,6 +2,7 @@
 'use server';
 
 import { analyzeIssuanceTrends } from '@/ai/flows/analyze-issuance-trends';
+import { analyzeFinancialTrends } from '@/ai/flows/analyze-financial-trends';
 import { processDocument as smartDataCapture } from '@/ai/flows/process-document-flow';
 import { conversationalAnalysis } from '@/ai/flows/conversational-analysis';
 import { generateAvatar } from '@/ai/flows/generate-avatar';
@@ -15,6 +16,10 @@ import type {
   AnalyzeIssuanceTrendsInput,
   AnalyzeIssuanceTrendsOutput,
 } from '@/ai/flows/analyze-issuance-trends';
+import type {
+  AnalyzeFinancialTrendsInput,
+  AnalyzeFinancialTrendsOutput,
+} from '@/ai/flows/analyze-financial-trends';
 import type {
   ProcessDocumentInput as SmartDataCaptureInput,
   ProcessDocumentOutput as SmartDataCaptureOutput,
@@ -38,6 +43,18 @@ export async function handleAnalyzeIssuanceTrends(
   } catch (error) {
     console.error('Error analyzing issuance trends:', error);
     throw new Error('Failed to analyze issuance trends.');
+  }
+}
+
+export async function handleAnalyzeFinancialTrends(
+  input: AnalyzeFinancialTrendsInput
+): Promise<AnalyzeFinancialTrendsOutput> {
+  try {
+    const result = await analyzeFinancialTrends(input);
+    return result;
+  } catch (error) {
+    console.error('Error analyzing financial trends:', error);
+    throw new Error('Failed to analyze financial trends.');
   }
 }
 
