@@ -24,6 +24,7 @@ export default function ConfiguracoesPage() {
   const { user } = useAuth();
   const [companyName, setCompanyName] = useState('');
   const [cnpj, setCnpj] = useState('');
+  const [aliquota, setAliquota] = useState('');
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [certificatePassword, setCertificatePassword] = useState('');
   const [loading, setLoading] = useState(true);
@@ -39,11 +40,13 @@ export default function ConfiguracoesPage() {
           const settings = docSnap.data();
           setCompanyName(settings.companyName || 'FiscalFlow Soluções');
           setCnpj(settings.cnpj || '00.000.000/0001-00');
+          setAliquota(settings.aliquota || '4.5');
           setCertificatePassword(settings.certificatePassword || '');
         } else {
           // Set default values if no settings found
           setCompanyName('FiscalFlow Soluções');
           setCnpj('00.000.000/0001-00');
+          setAliquota('4.5');
         }
         setLoading(false);
     };
@@ -64,6 +67,7 @@ export default function ConfiguracoesPage() {
     const settingsData = {
       companyName,
       cnpj,
+      aliquota,
       certificatePassword
     };
 
@@ -91,29 +95,45 @@ export default function ConfiguracoesPage() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Perfil da Empresa</CardTitle>
+            <CardTitle>Perfil da Empresa e Impostos</CardTitle>
             <CardDescription>
-              Gerencie as informações da sua empresa que aparecerão nas notas fiscais.
+              Gerencie as informações da sua empresa e a alíquota de impostos para os relatórios.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="company-name">Nome da Empresa</Label>
-              <Input
-                id="company-name"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                disabled={loading}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                <Label htmlFor="company-name">Nome da Empresa</Label>
+                <Input
+                    id="company-name"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    disabled={loading}
+                />
+                </div>
+                <div className="grid gap-2">
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input
+                    id="cnpj"
+                    value={cnpj}
+                    onChange={(e) => setCnpj(e.target.value)}
+                    disabled={loading}
+                />
+                </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input
-                id="cnpj"
-                value={cnpj}
-                onChange={(e) => setCnpj(e.target.value)}
-                disabled={loading}
-              />
+             <div className="grid gap-2 max-w-xs">
+                <Label htmlFor="aliquota">Alíquota do Simples Nacional (%)</Label>
+                <Input
+                    id="aliquota"
+                    type="number"
+                    value={aliquota}
+                    onChange={(e) => setAliquota(e.target.value)}
+                    disabled={loading}
+                    placeholder="Ex: 4.5"
+                />
+                <p className="text-xs text-muted-foreground">
+                    Essa alíquota será usada para calcular a estimativa de imposto na página de Relatórios.
+                </p>
             </div>
           </CardContent>
         </Card>
