@@ -47,10 +47,19 @@ import { handleGenerateAndUpdateAvatar } from '@/lib/actions';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import TrendsChart from '@/components/dashboard/trends-chart';
+
+type ChartDataPoint = {
+  month: string;
+  'Ano Atual': number;
+  'Ano Anterior': number;
+};
 
 export default function ClienteDetailPage({ params }: { params: { id: string } }) {
   const [client, setClient] = React.useState<Client | null>(null);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [chartData, setChartData] = React.useState<ChartDataPoint[]>([]);
   const [loadingData, setLoadingData] = React.useState(true);
   const [open, setOpen] = React.useState(false);
   const [clientFormData, setClientFormData] = React.useState({
@@ -62,6 +71,36 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
   });
   const { toast } = useToast();
   const router = useRouter();
+
+  const processInvoiceDataForChart = (invoices: Invoice[]) => {
+      const now = new Date();
+      const monthlyChartData: { [year: string]: { [month: string]: { total: number; count: number } } } = {};
+      const monthLabels = Array.from({length: 12}, (_, i) => format(new Date(0, i), 'MMM'));
+
+      invoices.forEach(inv => {
+        if (inv.status === 'cancelada' || inv.status === 'rascunho') return;
+        const invDate = new Date(inv.date);
+        const year = invDate.getFullYear();
+        const month = invDate.getMonth();
+        if(year >= now.getFullYear() - 1) {
+            if (!monthlyChartData[year]) monthlyChartData[year] = {};
+            if (!monthlyChartData[year][month]) monthlyChartData[year][month] = { total: 0, count: 0 };
+            monthlyChartData[year][month].total += inv.value;
+            monthlyChartData[year][month].count += 1;
+        }
+      });
+      
+      const newFaturamentoData: ChartDataPoint[] = [];
+
+      monthLabels.forEach((label, monthIndex) => {
+        const currentYearData = monthlyChartData[now.getFullYear()]?.[monthIndex] || { total: 0, count: 0 };
+        const previousYearData = monthlyChartData[now.getFullYear() - 1]?.[monthIndex] || { total: 0, count: 0 };
+        
+        newFaturamentoData.push({ month: label, 'Ano Atual': currentYearData.total, 'Ano Anterior': previousYearData.total });
+      });
+
+      setChartData(newFaturamentoData);
+  }
 
   React.useEffect(() => {
     const clientId = params.id;
@@ -95,6 +134,7 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
     const invoicesUnsubscribe = onSnapshot(invoicesQuery, (querySnapshot) => {
         const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
         setInvoices(invoicesData);
+        processInvoiceDataForChart(invoicesData);
         setLoadingData(false);
     }, (error) => {
         console.error("Error fetching invoices: ", error);
@@ -193,93 +233,117 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
                 </Button>
             </div>
         </div>
-
-        {/* Client Info Card */}
-        <Card>
-            <CardHeader className="flex flex-col sm:flex-row items-start gap-4 space-y-0">
-                {isLoading ? <Skeleton className="h-24 w-24 rounded-full" /> : (
-                    <Avatar className="h-24 w-24 border">
-                        <AvatarImage src={client.avatarUrl} alt={client.name} data-ai-hint="logo abstract" />
-                        <AvatarFallback>{client.name.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                )}
-                <div className="grid gap-1 text-sm flex-1">
-                    <CardTitle className="text-xl">{isLoading ? <Skeleton className="h-6 w-48" /> : client.name}</CardTitle>
-                    {isLoading ? (
-                        <div className="space-y-2 pt-1">
-                            <Skeleton className="h-4 w-56" />
-                            <Skeleton className="h-4 w-40" />
-                            <Skeleton className="h-4 w-32" />
-                        </div>
-                    ) : (
-                        <>
-                         <div className="text-muted-foreground break-all">{client.email}</div>
-                         <div className="text-muted-foreground">{client.cpf_cnpj}</div>
-                         <div className="text-muted-foreground">{client.phone}</div>
-                        </>
-                    )}
-                </div>
-            </CardHeader>
-        </Card>
         
-        {/* Invoices History Card */}
-        <Card>
-            <CardHeader>
-                <CardTitle>Histórico de Faturas</CardTitle>
-                <CardDescription>
-                    Todas as faturas emitidas para este cliente.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nº Chave</TableHead>
-                            <TableHead className="hidden sm:table-cell">Status</TableHead>
-                            <TableHead className="hidden md:table-cell">Data</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                           Array.from({ length: 3 }).map((_, i) => (
-                             <TableRow key={i}>
-                               <TableCell><Skeleton className="h-5 w-32 sm:w-48" /></TableCell>
-                               <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-24" /></TableCell>
-                               <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                               <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
-                             </TableRow>
-                           ))
-                        ) : invoices.length > 0 ? (
-                           invoices.map((invoice) => (
-                             <TableRow key={invoice.id}>
-                               <TableCell>
-                                 <div className="font-mono text-xs break-all pr-4">{invoice.key}</div>
-                               </TableCell>
-                               <TableCell className="hidden sm:table-cell">
-                                 <Badge variant={invoice.status === 'paga' ? 'success' : invoice.status === 'pendente' ? 'warning' : 'destructive'} className="capitalize">
-                                   {invoice.status}
-                                 </Badge>
-                               </TableCell>
-                               <TableCell className="hidden md:table-cell">{invoice.date}</TableCell>
-                               <TableCell className="text-right">{invoice.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
-                             </TableRow>
-                           ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    <div className="text-center text-muted-foreground py-8">
-                                        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                                        <p className='mb-2 font-medium'>Nenhuma fatura encontrada.</p>
-                                        <p className='text-sm'>Nenhuma fatura foi emitida para este cliente ainda.</p>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+        <div className="grid gap-4 lg:grid-cols-2">
+            {/* Client Info and Invoices History */}
+            <div className="space-y-4">
+                {/* Client Info Card */}
+                <Card>
+                    <CardHeader className="flex flex-col sm:flex-row items-start gap-4 space-y-0">
+                        {isLoading ? <Skeleton className="h-24 w-24 rounded-full" /> : (
+                            <Avatar className="h-24 w-24 border">
+                                <AvatarImage src={client.avatarUrl} alt={client.name} data-ai-hint="logo abstract" />
+                                <AvatarFallback>{client.name.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
                         )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                        <div className="grid gap-1 text-sm flex-1">
+                            <CardTitle className="text-xl">{isLoading ? <Skeleton className="h-6 w-48" /> : client.name}</CardTitle>
+                            {isLoading ? (
+                                <div className="space-y-2 pt-1">
+                                    <Skeleton className="h-4 w-56" />
+                                    <Skeleton className="h-4 w-40" />
+                                    <Skeleton className="h-4 w-32" />
+                                </div>
+                            ) : (
+                                <>
+                                <div className="text-muted-foreground break-all">{client.email}</div>
+                                <div className="text-muted-foreground">{client.cpf_cnpj}</div>
+                                <div className="text-muted-foreground">{client.phone}</div>
+                                </>
+                            )}
+                        </div>
+                    </CardHeader>
+                </Card>
+                
+                {/* Invoices History Card */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Histórico de Faturas</CardTitle>
+                        <CardDescription>
+                            Todas as faturas emitidas para este cliente.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nº Chave</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Status</TableHead>
+                                    <TableHead className="hidden md:table-cell">Data</TableHead>
+                                    <TableHead className="text-right">Valor</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <TableRow key={i}>
+                                    <TableCell><Skeleton className="h-5 w-32 sm:w-48" /></TableCell>
+                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-24" /></TableCell>
+                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+                                    </TableRow>
+                                ))
+                                ) : invoices.length > 0 ? (
+                                invoices.map((invoice) => (
+                                    <TableRow key={invoice.id}>
+                                    <TableCell>
+                                        <div className="font-mono text-xs break-all pr-4">{invoice.key}</div>
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell">
+                                        <Badge variant={invoice.status === 'paga' ? 'success' : invoice.status === 'pendente' ? 'warning' : 'destructive'} className="capitalize">
+                                        {invoice.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell">{invoice.date}</TableCell>
+                                    <TableCell className="text-right">{invoice.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
+                                    </TableRow>
+                                ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            <div className="text-center text-muted-foreground py-8">
+                                                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                                                <p className='mb-2 font-medium'>Nenhuma fatura encontrada.</p>
+                                                <p className='text-sm'>Nenhuma fatura foi emitida para este cliente ainda.</p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+             {/* Chart Card */}
+            <div className="space-y-4">
+                 <Card className="h-full">
+                    <CardHeader>
+                        <CardTitle>Rentabilidade do Cliente (R$)</CardTitle>
+                        <CardDescription>Faturamento mensal para este cliente (ano atual vs. anterior).</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        {isLoading ? (
+                            <div className="h-[350px] w-full flex items-center justify-center">
+                                <Skeleton className="h-[300px] w-[95%]" />
+                            </div>
+                        ) : (
+                            <TrendsChart data={chartData} metric="faturamento" />
+                        )}
+                    </CardContent>
+                 </Card>
+            </div>
+        </div>
+
 
         {/* Edit Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
@@ -322,3 +386,5 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
+
+    
