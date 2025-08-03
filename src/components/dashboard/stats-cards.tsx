@@ -18,21 +18,21 @@ interface StatsCardsProps {
 export default function StatsCards({ data, loading }: StatsCardsProps) {
   const stats = [
     {
-      title: 'Total Recebido (Mês)',
+      title: 'Recebido (Mês)',
       value: data.totalPaid.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
       icon: CheckCircle,
       description: data.totalPaidChange,
       color: 'text-green-500'
     },
     {
-      title: 'Pendente de Recebimento',
+      title: 'Pendente (Mês)',
       value: data.totalPending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
       icon: Clock,
       description: data.totalPendingChange,
       color: 'text-yellow-500'
     },
     {
-      title: 'Total em Atraso',
+      title: 'Total Vencido',
       value: data.totalOverdue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
       icon: AlertTriangle,
       description: data.totalOverdueChange,

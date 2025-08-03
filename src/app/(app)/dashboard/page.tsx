@@ -78,9 +78,8 @@ export default function DashboardPage() {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const invoicesData = querySnapshot.docs.map(doc => {
         const data = doc.data() as Omit<Invoice, 'id'>;
+        // Check for overdue invoices on the client side for real-time status update
         if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
-            // This is a view-logic update, not saving to DB to avoid extra writes.
-            // A background job would be better for this in a real app.
             return { id: doc.id, ...data, status: 'vencida' };
         }
         return { id: doc.id, ...data } as Invoice;
@@ -119,7 +118,7 @@ export default function DashboardPage() {
         return {
           paid: filteredInvoices.filter(i => i.status === 'paga').reduce((sum, i) => sum + i.value, 0),
           pending: filteredInvoices.filter(i => i.status === 'pendente').reduce((sum, i) => sum + i.value, 0),
-          overdue: filteredInvoices.filter(i => i.status === 'vencida').reduce((sum, i) => sum + i.value, 0),
+          overdue: invoices.filter(i => i.status === 'vencida').reduce((sum, i) => sum + i.value, 0), // Total overdue regardless of month
           volume: filteredInvoices.length,
           totalValue: filteredInvoices.reduce((sum, i) => sum + i.value, 0),
         };
@@ -173,14 +172,16 @@ export default function DashboardPage() {
         volume: newVolumeData,
         ticketMedio: newTicketMedioData
       });
+      
+      const totalOverdue = invoices.filter(i => i.status === 'vencida').reduce((sum, i) => sum + i.value, 0);
 
       setStatsData({
         totalPaid: currentMonthStats.paid,
         totalPending: currentMonthStats.pending,
-        totalOverdue: currentMonthStats.overdue,
+        totalOverdue: totalOverdue,
         totalPaidChange: `${calculateChange(currentMonthStats.paid, prevMonthStats.paid)} do último mês`,
         totalPendingChange: `${calculateChange(currentMonthStats.pending, prevMonthStats.pending)} do último mês`,
-        totalOverdueChange: `${calculateChange(currentMonthStats.overdue, prevMonthStats.overdue)} do último mês`,
+        totalOverdueChange: ``, // No change calculation for total overdue
         volume: currentMonthStats.volume,
         averageValue: currentMonthStats.volume > 0 ? currentMonthStats.totalValue / currentMonthStats.volume : 0,
         trends: `Volume de emissões ${calculateChange(currentMonthStats.volume, prevMonthStats.volume)} este mês.`,
