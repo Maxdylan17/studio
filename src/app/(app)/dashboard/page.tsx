@@ -5,10 +5,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatsCards from '@/components/dashboard/stats-cards';
 import TrendsChart from '@/components/dashboard/trends-chart';
-import AiAnalysis from '@/components/dashboard/ai-analysis';
+import AiIssuanceAnalysis from '@/components/dashboard/ai-analysis';
+import FinancialAiAnalysis from '@/components/dashboard/financial-ai-analysis';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
-import type { Invoice } from '@/lib/definitions';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import type { Invoice, Expense } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -24,7 +25,9 @@ type StatsData = {
   totalOverdueChange: string;
   volume: number;
   averageValue: number;
-  trends: string;
+  issuanceTrends: string;
+  totalExpenses: number;
+  expenseTrends: string;
 };
 
 type ChartDataPoint = {
@@ -50,7 +53,9 @@ const defaultStats: StatsData = {
   totalOverdueChange: '+0.0%',
   volume: 0,
   averageValue: 0,
-  trends: 'Nenhuma tendência detectada ainda. Emita algumas notas para começar.',
+  issuanceTrends: 'Nenhuma tendência detectada ainda. Emita algumas notas para começar.',
+  totalExpenses: 0,
+  expenseTrends: 'Nenhuma tendência de despesas detectada.',
 };
 
 const defaultChartData: ChartData = {
@@ -73,36 +78,61 @@ export default function DashboardPage() {
       return;
     }
   
-    const q = query(collection(db, 'invoices'), where('userId', '==', user.uid));
-  
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const invoicesData = querySnapshot.docs.map(doc => {
-        const data = doc.data() as Omit<Invoice, 'id'>;
-        // Check for overdue invoices on the client side for real-time status update
-        if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
-            return { id: doc.id, ...data, status: 'vencida' };
-        }
-        return { id: doc.id, ...data } as Invoice;
-      }) as Invoice[];
+    const qInvoices = query(collection(db, 'invoices'), where('userId', '==', user.uid));
+    const qExpenses = query(collection(db, 'expenses'), where('userId', '==', user.uid));
+    
+    let invoicesUnsubscribe: () => void;
+    let expensesUnsubscribe: () => void;
 
-      if (invoicesData.length > 0) {
-        processInvoiceData(invoicesData);
-      } else {
+    let invoicesData: Invoice[] = [];
+    let expensesData: Expense[] = [];
+    let isInitialLoad = true;
+
+    const processAllData = () => {
+        if (invoicesData.length > 0 || expensesData.length > 0) {
+            processFinancialData(invoicesData, expensesData);
+        } else {
+            setStatsData(defaultStats);
+            setChartData(defaultChartData);
+        }
+        if (isInitialLoad) {
+            setLoadingData(false);
+            isInitialLoad = false;
+        }
+    }
+  
+    invoicesUnsubscribe = onSnapshot(qInvoices, (querySnapshot) => {
+        invoicesData = querySnapshot.docs.map(doc => {
+            const data = doc.data() as Omit<Invoice, 'id'>;
+            if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
+                return { id: doc.id, ...data, status: 'vencida' };
+            }
+            return { id: doc.id, ...data } as Invoice;
+        }) as Invoice[];
+        processAllData();
+    }, (error) => {
+        console.error('Error fetching invoices for dashboard:', error);
         setStatsData(defaultStats);
         setChartData(defaultChartData);
-      }
-       setLoadingData(false);
+        if (isInitialLoad) setLoadingData(false);
+    });
+
+    expensesUnsubscribe = onSnapshot(qExpenses, (querySnapshot) => {
+        expensesData = querySnapshot.docs.map(doc => doc.data() as Expense) as Expense[];
+        processAllData();
     }, (error) => {
-      console.error('Error fetching invoices for dashboard:', error);
-      setStatsData(defaultStats);
-      setChartData(defaultChartData);
-      setLoadingData(false);
+        console.error('Error fetching expenses for dashboard:', error);
+        // Do not reset all data, just process what we have
+        processAllData(); 
     });
   
-    return () => unsubscribe();
+    return () => {
+      if (invoicesUnsubscribe) invoicesUnsubscribe();
+      if (expensesUnsubscribe) expensesUnsubscribe();
+    };
   }, [user]);
 
-  const processInvoiceData = (invoices: Invoice[]) => {
+  const processFinancialData = (invoices: Invoice[], expenses: Expense[]) => {
       const now = new Date();
       const currentMonthStart = startOfMonth(now);
       const prevMonthStart = startOfMonth(subMonths(now, 1));
@@ -114,6 +144,11 @@ export default function DashboardPage() {
           const isInDateRange = invDate >= startDate && (endDate ? invDate <= endDate : true);
           return isInDateRange && inv.status !== 'cancelada' && inv.status !== 'rascunho';
         });
+
+        const filteredExpenses = expenses.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate >= startDate && (endDate ? expDate <= endDate : true);
+        });
         
         return {
           paid: filteredInvoices.filter(i => i.status === 'paga').reduce((sum, i) => sum + i.value, 0),
@@ -121,6 +156,7 @@ export default function DashboardPage() {
           overdue: invoices.filter(i => i.status === 'vencida').reduce((sum, i) => sum + i.value, 0), // Total overdue regardless of month
           volume: filteredInvoices.length,
           totalValue: filteredInvoices.reduce((sum, i) => sum + i.value, 0),
+          expenses: filteredExpenses.reduce((sum, e) => sum + e.value, 0)
         };
       };
 
@@ -184,7 +220,9 @@ export default function DashboardPage() {
         totalOverdueChange: ``, // No change calculation for total overdue
         volume: currentMonthStats.volume,
         averageValue: currentMonthStats.volume > 0 ? currentMonthStats.totalValue / currentMonthStats.volume : 0,
-        trends: `Volume de emissões ${calculateChange(currentMonthStats.volume, prevMonthStats.volume)} este mês.`,
+        issuanceTrends: `Volume de emissões ${calculateChange(currentMonthStats.volume, prevMonthStats.volume)} este mês.`,
+        totalExpenses: currentMonthStats.expenses,
+        expenseTrends: `Despesas ${calculateChange(currentMonthStats.expenses, prevMonthStats.expenses)} este mês.`
       });
   };
 
@@ -225,13 +263,22 @@ export default function DashboardPage() {
              )}
           </CardContent>
         </Card>
-        <AiAnalysis
+        <AiIssuanceAnalysis
           volume={statsData.volume}
           averageValue={statsData.averageValue}
-          trends={statsData.trends}
+          trends={statsData.issuanceTrends}
           loading={loadingData}
         />
       </div>
+       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+         <FinancialAiAnalysis 
+            totalRevenue={statsData.totalPaid}
+            totalExpenses={statsData.totalExpenses}
+            revenueTrends={statsData.totalPaidChange}
+            expenseTrends={statsData.expenseTrends}
+            loading={loadingData}
+          />
+       </div>
     </div>
   );
 }

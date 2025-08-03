@@ -11,21 +11,22 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wand2, RefreshCw } from 'lucide-react';
-import { handleAnalyzeIssuanceTrends } from '@/lib/actions';
+import { BrainCircuit, RefreshCw } from 'lucide-react';
+import { handleAnalyzeFinancialTrends } from '@/lib/actions';
 import { Skeleton } from '../ui/skeleton';
-import type { AnalyzeIssuanceTrendsOutput } from '@/ai/flows/analyze-issuance-trends';
+import type { AnalyzeFinancialTrendsOutput } from '@/ai/flows/analyze-financial-trends';
 
-interface AiIssuanceAnalysisProps {
-    volume: number;
-    averageValue: number;
-    trends: string;
+interface FinancialAiAnalysisProps {
+    totalRevenue: number;
+    totalExpenses: number;
+    revenueTrends: string;
+    expenseTrends: string;
     loading: boolean;
 }
 
-export default function AiIssuanceAnalysis({ volume, averageValue, trends, loading: loadingData }: AiIssuanceAnalysisProps) {
+export default function FinancialAiAnalysis({ totalRevenue, totalExpenses, revenueTrends, expenseTrends, loading: loadingData }: FinancialAiAnalysisProps) {
   const [loading, setLoading] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalyzeIssuanceTrendsOutput | null>(null);
+  const [analysis, setAnalysis] = useState<AnalyzeFinancialTrendsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const getAnalysis = async () => {
@@ -34,30 +35,31 @@ export default function AiIssuanceAnalysis({ volume, averageValue, trends, loadi
     setAnalysis(null);
 
     const input = {
-      volume,
-      averageValue,
-      trends,
+      totalRevenue,
+      totalExpenses,
+      revenueTrends,
+      expenseTrends,
     };
 
     try {
-      const result = await handleAnalyzeIssuanceTrends(input);
+      const result = await handleAnalyzeFinancialTrends(input);
       setAnalysis(result);
     } catch (e) {
-      setError('Ocorreu um erro ao gerar a análise. Tente novamente.');
+      setError('Ocorreu um erro ao gerar a análise financeira. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="lg:col-span-3 md:col-span-2">
+    <Card className="lg:col-span-7">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-primary" />
-          Análise de Emissões
+          <BrainCircuit className="h-5 w-5 text-primary" />
+          Análise Financeira (Receitas x Despesas)
         </CardTitle>
         <CardDescription>
-          Receba insights sobre seus padrões de emissão de notas.
+          Receba uma análise da saúde financeira do seu negócio com base nos dados do último mês.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -75,11 +77,11 @@ export default function AiIssuanceAnalysis({ volume, averageValue, trends, loadi
         {analysis && !loading && !loadingData && (
           <div className="space-y-4 text-sm">
             <div>
-              <h4 className="font-semibold mb-1">Insights</h4>
+              <h4 className="font-semibold mb-1">Insights Financeiros</h4>
               <p className="text-muted-foreground">{analysis.insights}</p>
             </div>
             <div>
-              <h4 className="font-semibold mb-1">Sugestões</h4>
+              <h4 className="font-semibold mb-1">Sugestões de Otimização</h4>
               <p className="text-muted-foreground">{analysis.suggestions}</p>
             </div>
           </div>
@@ -95,9 +97,9 @@ export default function AiIssuanceAnalysis({ volume, averageValue, trends, loadi
           {loading ? (
             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <Wand2 className="mr-2 h-4 w-4" />
+            <BrainCircuit className="mr-2 h-4 w-4" />
           )}
-          {loading ? 'Analisando...' : 'Analisar Emissões'}
+          {loading ? 'Analisando Finanças...' : 'Gerar Análise Financeira'}
         </Button>
       </CardFooter>
     </Card>
