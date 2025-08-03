@@ -219,7 +219,7 @@ export default function DanfePage({ params }: { params: { id:string } }) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                             <div>
                                 <p className="text-muted-foreground text-xs">NOME/RAZÃO SOCIAL</p>
-                                <p className="font-medium">{client?.name ?? invoice?.client}</p>
+                                <p className="font-medium">{client?.name ?? invoice?.destinatario.nome}</p>
                             </div>
                              <div>
                                 <p className="text-muted-foreground text-xs">CPF/CNPJ</p>
