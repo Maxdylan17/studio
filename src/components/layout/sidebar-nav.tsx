@@ -19,6 +19,7 @@ const links = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/emitir', label: 'Gerador NF-e', icon: FilePen },
   { href: '/clientes', label: 'Clientes', icon: Users },
+  { href: '/notas', label: 'Faturas', icon: BarChart2 },
   { href: '/captura', label: 'Captura de Dados', icon: ScanLine },
   { href: '/relatorios', label: 'Assistente IA', icon: BrainCircuit },
   { href: '/impostos', label: 'Impostos', icon: Landmark },

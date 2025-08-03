@@ -310,7 +310,7 @@ export default function NotasPage() {
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Faturas</h1>
          <Button variant="outline" onClick={handleExportCSV} disabled={isLoading || invoices.length === 0}>
             <Download className="mr-2 h-4 w-4" /> Exportar CSV
@@ -566,5 +566,3 @@ export default function NotasPage() {
     </div>
   );
 }
-
-    

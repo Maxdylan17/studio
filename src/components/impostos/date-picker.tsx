@@ -49,7 +49,7 @@ export function DatePickerWithPresets({ date, setDate, className }: DatePickerWi
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date ? format(date, "MMMM, yyyy") : <span>Selecione um mês</span>}
+            {date ? format(date, "MMMM, yyyy", { locale: ptBR }) : <span>Selecione um mês</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent
