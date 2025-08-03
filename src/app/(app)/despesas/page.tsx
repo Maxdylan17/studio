@@ -37,6 +37,7 @@ import { useAuth } from '@/hooks/use-auth';
 import type { Expense } from '@/lib/definitions';
 import { PlusCircle, Trash2, FileText, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -192,7 +193,7 @@ export default function DespesasPage() {
                             )}
                             >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {expenseFormData.date ? format(expenseFormData.date, "PPP") : <span>Selecione uma data</span>}
+                            {expenseFormData.date ? format(expenseFormData.date, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -263,7 +264,7 @@ export default function DespesasPage() {
                     <TableRow key={expense.id}>
                         <TableCell className="font-medium">{expense.description}</TableCell>
                         <TableCell className="hidden sm:table-cell">{expense.category}</TableCell>
-                        <TableCell className="hidden md:table-cell">{expense.date}</TableCell>
+                        <TableCell className="hidden md:table-cell">{format(new Date(expense.date), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-right">{expense.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                         <TableCell className="text-right">
                            <Button
@@ -295,5 +296,3 @@ export default function DespesasPage() {
     </div>
   );
 }
-
-    
