@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A flow to generate a professional email body for sending an invoice.
+ * @fileOverview A flow to generate a professional email body for sending an invoice or a payment reminder.
  *
  * - generateInvoiceEmail - A function that generates the email content.
  * - GenerateInvoiceEmailInput - The input type for the function.
@@ -27,7 +27,7 @@ const prompt = ai.definePrompt({
   name: 'generateInvoiceEmailPrompt',
   input: { schema: GenerateInvoiceEmailInputSchema },
   output: { schema: GenerateInvoiceEmailOutputSchema },
-  prompt: `Você é um assistente de faturamento. Sua tarefa é criar o corpo de um e-mail profissional em HTML para enviar uma fatura a um cliente.
+  prompt: `Você é um assistente de faturamento. Sua tarefa é criar o corpo de um e-mail profissional em HTML para um cliente, com base no status da fatura.
 O e-mail deve ser amigável, claro e usar um layout limpo com HTML.
 
 Use as seguintes informações:
@@ -36,16 +36,17 @@ Use as seguintes informações:
 - Valor da Fatura: R$ {{{invoiceValue}}}
 - Chave de Acesso: {{{invoiceKey}}}
 - Nome da Empresa Remetente: {{{companyName}}}
+- Status da Fatura: {{{status}}}
 
-O e-mail deve incluir:
-1. Uma saudação ("Olá, [Nome do Cliente],").
-2. Uma breve explicação de que a fatura está disponível.
-3. Os detalhes da fatura de forma clara (Data, Valor, Chave de Acesso).
-4. Uma despedida profissional (ex: "Atenciosamente,").
-5. O nome da sua empresa na assinatura.
+REGRAS:
+1.  Se o status for 'pendente' ou 'vencida', o tom deve ser um lembrete amigável de pagamento.
+    - O assunto deve ser "Lembrete de Vencimento: Fatura Eletrônica".
+    - O corpo do e-mail deve mencionar que a fatura está pendente ou vencida e incluir os detalhes para facilitar o pagamento.
+2.  Para qualquer outro status (ou se o status não for 'pendente' ou 'vencida'), o tom é apenas de notificação.
+    - O assunto deve ser "Sua Fatura Eletrônica está disponível".
+    - O corpo do e-mail deve apenas informar que a fatura está disponível, sem menção a cobrança.
 
-O campo "subject" do JSON de saída deve ser "Sua Fatura Eletrônica está disponível".
-O campo "body" do JSON de saída deve ser o conteúdo completo do e-mail em formato HTML. Não use markdown.
+Em ambos os casos, o campo "body" do JSON de saída deve ser o conteúdo completo do e-mail em formato HTML. Não use markdown.
 `,
 });
 

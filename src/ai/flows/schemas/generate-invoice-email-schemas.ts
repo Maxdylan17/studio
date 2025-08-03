@@ -7,6 +7,7 @@ export const GenerateInvoiceEmailInputSchema = z.object({
   invoiceValue: z.string().describe('O valor total da nota fiscal.'),
   invoiceKey: z.string().describe('A chave de acesso da nota fiscal.'),
   companyName: z.string().describe('O nome da empresa que está enviando a nota.'),
+  status: z.string().describe('O status atual da fatura (ex: pendente, vencida, paga).'),
 });
 export type GenerateInvoiceEmailInput = z.infer<
   typeof GenerateInvoiceEmailInputSchema
