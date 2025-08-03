@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import type { Invoice } from '@/lib/definitions';
-import { format, startOfMonth, endOfMonth, subMonths, getYear, getMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DatePickerWithPresets } from '@/components/impostos/date-picker';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -123,9 +123,9 @@ export default function ImpostosPage() {
                                         {reportData?.totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00'}
                                     </div>
                                 )}
-                                <p className="text-xs text-muted-foreground">
+                                <div className="text-xs text-muted-foreground">
                                     {loading ? <Skeleton className="h-4 w-1/2 mt-1" /> : `Baseado em ${reportData?.invoiceCount ?? 0} nota(s) paga(s).`}
-                                </p>
+                                </div>
                             </CardContent>
                         </Card>
                          <Card>
@@ -141,9 +141,9 @@ export default function ImpostosPage() {
                                         {reportData?.taxRate.toFixed(2) ?? '0.00'}%
                                     </div>
                                 )}
-                                <p className="text-xs text-muted-foreground">
+                                <div className="text-xs text-muted-foreground">
                                     {loading ? <Skeleton className="h-4 w-1/2 mt-1" /> : 'Configurada na página de Configurações.'}
-                                </p>
+                                </div>
                             </CardContent>
                         </Card>
                          <Card className="border-primary/50 bg-primary/5">
@@ -159,9 +159,9 @@ export default function ImpostosPage() {
                                         {reportData?.estimatedTax.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00'}
                                     </div>
                                 )}
-                                <p className="text-xs text-muted-foreground">
+                                <div className="text-xs text-muted-foreground">
                                     {loading ? <Skeleton className="h-4 w-1/2 mt-1" /> : 'Este é o valor estimado para o DAS.'}
-                                </p>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
