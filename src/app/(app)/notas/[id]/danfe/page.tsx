@@ -7,11 +7,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import type { Invoice, Client, InvoiceItem } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
+import { PixIcon } from '@/components/ui/pix-icon';
+import { Input } from '@/components/ui/input';
 
 const statusConfig: { [key in Invoice['status']]: { variant: "default" | "secondary" | "destructive" | "success" | "warning"; text: string } } = {
   pendente: { variant: 'warning', text: 'Pendente' },
@@ -30,6 +33,8 @@ export default function DanfePage({ params }: { params: { id:string } }) {
   const [loading, setLoading] = React.useState(true);
   const { toast } = useToast();
   const router = useRouter();
+
+  const pixCopiaECola = '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540510.005802BR5913Sua Empresa6009SAO PAULO62070503***6304E2A4';
 
   React.useEffect(() => {
     if (!params.id) return;
@@ -92,6 +97,14 @@ export default function DanfePage({ params }: { params: { id:string } }) {
   const handlePrint = () => {
     window.print();
   };
+
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(pixCopiaECola);
+    toast({
+        title: 'Copiado!',
+        description: 'O código PIX foi copiado para a área de transferência.'
+    })
+  }
 
   const isLoading = loading;
   const totalValue = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -252,9 +265,41 @@ export default function DanfePage({ params }: { params: { id:string } }) {
                         </section>
                     )}
 
+                    {/* PIX Payment Section */}
+                    {invoice.status !== 'paga' && invoice.status !== 'cancelada' && (
+                        <section className="pt-4">
+                            <h4 className="font-bold mb-4 text-base border-b pb-1 flex items-center gap-2"><PixIcon /> Pague com PIX</h4>
+                            <div className="flex flex-col sm:flex-row items-center gap-6">
+                                <div className='text-center'>
+                                    <Image 
+                                        src="https://placehold.co/200x200.png"
+                                        alt="QR Code PIX" 
+                                        width={160} 
+                                        height={160} 
+                                        className="rounded-md border p-1"
+                                        data-ai-hint="qr code"
+                                    />
+                                    <p className="text-xs mt-1 text-muted-foreground">Escaneie para pagar</p>
+                                </div>
+                                <div className="space-y-3 flex-1 w-full">
+                                    <p className="text-sm font-medium">Ou use o PIX Copia e Cola:</p>
+                                    <div className="flex gap-2">
+                                        <Input readOnly value={pixCopiaECola} className="text-xs bg-muted" />
+                                        <Button size="icon" variant="outline" onClick={handleCopyToClipboard}>
+                                            <Copy className="h-4 w-4" />
+                                            <span className="sr-only">Copiar</span>
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">O pagamento é confirmado em poucos instantes.</p>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
 
                     {/* Footer */}
                     <footer className="pt-4">
+                         <Separator className="mb-4" />
                         <div className="flex justify-end">
                             <div className="w-full max-w-xs space-y-2">
                                 <div className="flex justify-between items-center">
