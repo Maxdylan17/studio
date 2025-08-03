@@ -9,6 +9,7 @@ import {
   Users,
   BrainCircuit,
   ScanLine,
+  Landmark,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +21,7 @@ const links = [
   { href: '/clientes', label: 'Clientes', icon: Users },
   { href: '/captura', label: 'Captura de Dados', icon: ScanLine },
   { href: '/relatorios', label: 'Assistente IA', icon: BrainCircuit },
+  { href: '/impostos', label: 'Impostos', icon: Landmark },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
