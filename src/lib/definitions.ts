@@ -36,6 +36,15 @@ export type Client = {
   avatarUrl?: string;
 };
 
+export type Expense = {
+  id: string;
+  userId: string;
+  description: string;
+  value: number;
+  date: string;
+  category: string;
+};
+
 export type ExtractedData = {
     recipient: {
         name?: string;

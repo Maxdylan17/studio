@@ -10,6 +10,7 @@ import {
   BrainCircuit,
   ScanLine,
   Landmark,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +21,7 @@ const links = [
   { href: '/emitir', label: 'Gerador NF-e', icon: FilePen },
   { href: '/clientes', label: 'Clientes', icon: Users },
   { href: '/notas', label: 'Faturas', icon: BarChart2 },
+  { href: '/despesas', label: 'Despesas', icon: CreditCard },
   { href: '/captura', label: 'Captura de Dados', icon: ScanLine },
   { href: '/relatorios', label: 'Assistente IA', icon: BrainCircuit },
   { href: '/impostos', label: 'Impostos', icon: Landmark },
