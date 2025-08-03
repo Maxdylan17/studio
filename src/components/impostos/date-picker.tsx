@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { format, subMonths, startOfMonth, endOfMonth, getYear } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
