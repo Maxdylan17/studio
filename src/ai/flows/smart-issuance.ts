@@ -10,23 +10,12 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const SmartIssuanceInputSchema = z.object({
-  description: z.string().describe('The natural language description of the services or products.'),
-});
-export type SmartIssuanceInput = z.infer<typeof SmartIssuanceInputSchema>;
-
-const InvoiceItemSchema = z.object({
-    description: z.string().describe('The detailed description of the item.'),
-    quantity: z.number().describe('The quantity of the item.'),
-    unitPrice: z.coerce.number().describe('The estimated unit price for the item. The AI must estimate a reasonable market price based on the description in BRL.'),
-});
-
-const SmartIssuanceOutputSchema = z.object({
-  items: z.array(InvoiceItemSchema).describe('An array of invoice items generated from the description.'),
-});
-export type SmartIssuanceOutput = z.infer<typeof SmartIssuanceOutputSchema>;
+import {
+    SmartIssuanceInputSchema,
+    SmartIssuanceOutputSchema,
+    type SmartIssuanceInput,
+    type SmartIssuanceOutput
+} from './schemas/smart-issuance-schemas';
 
 export async function smartIssuance(input: SmartIssuanceInput): Promise<SmartIssuanceOutput> {
   return smartIssuanceFlow(input);

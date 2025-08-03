@@ -16,11 +16,11 @@ import { db } from './firebase';
 import type {
   AnalyzeIssuanceTrendsInput,
   AnalyzeIssuanceTrendsOutput,
-} from '@/ai/flows/analyze-issuance-trends';
+} from '@/ai/flows/schemas/analyze-issuance-trends-schemas';
 import type {
   AnalyzeFinancialTrendsInput,
   AnalyzeFinancialTrendsOutput,
-} from '@/ai/flows/analyze-financial-trends';
+} from '@/ai/flows/schemas/analyze-financial-trends-schemas';
 import type {
   ProcessDocumentInput as SmartDataCaptureInput,
   ProcessDocumentOutput as SmartDataCaptureOutput,
@@ -32,8 +32,8 @@ import type {
 import type { GenerateAvatarInput } from '@/ai/flows/schemas/generate-avatar-schemas';
 import type { GenerateInvoiceEmailInput, GenerateInvoiceEmailOutput } from '@/ai/flows/schemas/generate-invoice-email-schemas';
 import type { ProcessDocumentInput, ProcessDocumentOutput } from '@/ai/flows/schemas/process-document-schemas';
-import type { SmartIssuanceInput, SmartIssuanceOutput } from '@/ai/flows/smart-issuance';
-import type { ForecastRevenueInput, ForecastRevenueOutput } from '@/ai/flows/forecast-revenue';
+import type { SmartIssuanceInput, SmartIssuanceOutput } from '@/ai/flows/schemas/smart-issuance-schemas';
+import type { ForecastRevenueInput, ForecastRevenueOutput } from '@/ai/flows/schemas/forecast-revenue-schemas';
 
 
 export async function handleAnalyzeIssuanceTrends(

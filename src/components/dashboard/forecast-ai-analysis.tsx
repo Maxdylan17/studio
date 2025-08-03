@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, RefreshCw, BarChart } from 'lucide-react';
 import { handleForecastRevenue } from '@/lib/actions';
 import { Skeleton } from '../ui/skeleton';
-import type { ForecastRevenueInput, ForecastRevenueOutput } from '@/ai/flows/forecast-revenue';
+import type { ForecastRevenueInput, ForecastRevenueOutput } from '@/ai/flows/schemas/forecast-revenue-schemas';
 
 interface ForecastAiAnalysisProps {
     historicalData: ForecastRevenueInput['historicalData'];

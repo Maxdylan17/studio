@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { BrainCircuit, RefreshCw } from 'lucide-react';
 import { handleAnalyzeFinancialTrends } from '@/lib/actions';
 import { Skeleton } from '../ui/skeleton';
-import type { AnalyzeFinancialTrendsOutput } from '@/ai/flows/analyze-financial-trends';
+import type { AnalyzeFinancialTrendsOutput } from '@/ai/flows/schemas/analyze-financial-trends-schemas';
 
 interface FinancialAiAnalysisProps {
     totalRevenue: number;

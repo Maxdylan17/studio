@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Wand2, RefreshCw } from 'lucide-react';
 import { handleAnalyzeIssuanceTrends } from '@/lib/actions';
 import { Skeleton } from '../ui/skeleton';
-import type { AnalyzeIssuanceTrendsOutput } from '@/ai/flows/analyze-issuance-trends';
+import type { AnalyzeIssuanceTrendsOutput } from '@/ai/flows/schemas/analyze-issuance-trends-schemas';
 
 interface AiIssuanceAnalysisProps {
     volume: number;

@@ -9,20 +9,12 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const AnalyzeIssuanceTrendsInputSchema = z.object({
-  volume: z.number().describe('The total volume of notas issued.'),
-  averageValue: z.number().describe('The average value of notas issued.'),
-  trends: z.string().describe('A description of the recent trends in nota issuance.'),
-});
-export type AnalyzeIssuanceTrendsInput = z.infer<typeof AnalyzeIssuanceTrendsInputSchema>;
-
-const AnalyzeIssuanceTrendsOutputSchema = z.object({
-  insights: z.string().describe('Insights into the nota issuance trends, volume, and values.'),
-  suggestions: z.string().describe('Suggestions on how to improve based on the analysis.'),
-});
-export type AnalyzeIssuanceTrendsOutput = z.infer<typeof AnalyzeIssuanceTrendsOutputSchema>;
+import {
+    AnalyzeIssuanceTrendsInputSchema,
+    AnalyzeIssuanceTrendsOutputSchema,
+    type AnalyzeIssuanceTrendsInput,
+    type AnalyzeIssuanceTrendsOutput,
+} from './schemas/analyze-issuance-trends-schemas';
 
 export async function analyzeIssuanceTrends(input: AnalyzeIssuanceTrendsInput): Promise<AnalyzeIssuanceTrendsOutput> {
   return analyzeIssuanceTrendsFlow(input);
