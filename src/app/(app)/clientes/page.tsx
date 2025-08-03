@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, Search, FileText } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Search, FileText, Download } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -152,6 +152,28 @@ export default function ClientesPage() {
     client.cpf_cnpj.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleExportCSV = () => {
+    const csvHeader = "Nome,E-mail,CPF/CNPJ,Telefone\n";
+    const csvRows = filteredClients.map(c => `"${c.name}","${c.email}","${c.cpf_cnpj}","${c.phone}"`).join("\n");
+    const csvContent = csvHeader + csvRows;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "clientes.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+     toast({
+        title: 'Exportação Iniciada',
+        description: 'O download do arquivo de clientes foi iniciado.',
+    });
+  };
   
   const isLoading = loadingData;
 
@@ -160,6 +182,9 @@ export default function ClientesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
         <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExportCSV} disabled={isLoading || filteredClients.length === 0}>
+                <Download className="mr-2 h-4 w-4" /> Exportar CSV
+            </Button>
            <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button onClick={handleOpenDialog}>

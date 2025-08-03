@@ -283,12 +283,37 @@ export default function NotasPage() {
     }, 1500);
   }
 
+  const handleExportCSV = () => {
+    const csvHeader = "Chave,Cliente,Status,Data,Vencimento,Valor\n";
+    const csvRows = invoices.map(inv => `"${inv.key}","${inv.client}","${inv.status}","${inv.date}","${inv.dueDate || ''}",${inv.value}`).join("\n");
+    const csvContent = csvHeader + csvRows;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "faturas.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+     toast({
+        title: 'Exportação Iniciada',
+        description: 'O download do arquivo de faturas foi iniciado.',
+    });
+  };
+
   const isLoading = loadingData;
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Faturas</h1>
+         <Button variant="outline" onClick={handleExportCSV} disabled={isLoading || invoices.length === 0}>
+            <Download className="mr-2 h-4 w-4" /> Exportar CSV
+        </Button>
       </div>
       <Card>
         <CardHeader>
@@ -540,5 +565,3 @@ export default function NotasPage() {
     </div>
   );
 }
-
-    
