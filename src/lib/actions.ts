@@ -9,6 +9,7 @@ import { generateAvatar } from '@/ai/flows/generate-avatar';
 import { generateInvoiceEmail } from '@/ai/flows/generate-invoice-email';
 import { processDocument } from '@/ai/flows/process-document-flow';
 import { smartIssuance } from '@/ai/flows/smart-issuance';
+import { forecastRevenue } from '@/ai/flows/forecast-revenue';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -32,6 +33,7 @@ import type { GenerateAvatarInput } from '@/ai/flows/schemas/generate-avatar-sch
 import type { GenerateInvoiceEmailInput, GenerateInvoiceEmailOutput } from '@/ai/flows/schemas/generate-invoice-email-schemas';
 import type { ProcessDocumentInput, ProcessDocumentOutput } from '@/ai/flows/schemas/process-document-schemas';
 import type { SmartIssuanceInput, SmartIssuanceOutput } from '@/ai/flows/smart-issuance';
+import type { ForecastRevenueInput, ForecastRevenueOutput } from '@/ai/flows/forecast-revenue';
 
 
 export async function handleAnalyzeIssuanceTrends(
@@ -144,4 +146,16 @@ export async function handleSmartIssuance(
     console.error('Error with smart issuance:', error);
     throw new Error('Failed to generate items from text.');
   }
+}
+
+export async function handleForecastRevenue(
+    input: ForecastRevenueInput
+): Promise<ForecastRevenueOutput> {
+    try {
+        const result = await forecastRevenue(input);
+        return result;
+    } catch (error) {
+        console.error('Error forecasting revenue:', error);
+        throw new Error('Failed to forecast revenue with AI.');
+    }
 }

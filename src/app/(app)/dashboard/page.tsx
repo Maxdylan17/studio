@@ -7,13 +7,15 @@ import StatsCards from '@/components/dashboard/stats-cards';
 import TrendsChart from '@/components/dashboard/trends-chart';
 import AiIssuanceAnalysis from '@/components/dashboard/ai-analysis';
 import FinancialAiAnalysis from '@/components/dashboard/financial-ai-analysis';
+import ForecastAiAnalysis from '@/components/dashboard/forecast-ai-analysis';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import type { Invoice, Expense } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { subMonths, startOfMonth, endOfMonth, format, isAfter } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, format, isAfter, getYear } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 
 type StatsData = {
@@ -29,6 +31,12 @@ type StatsData = {
   totalExpenses: number;
   expenseTrends: string;
 };
+
+type HistoricalDataPoint = {
+    year: number;
+    month: string;
+    revenue: number;
+}
 
 type ChartDataPoint = {
   month: string;
@@ -69,6 +77,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [statsData, setStatsData] = useState<StatsData>(defaultStats);
   const [chartData, setChartData] = useState<ChartData>(defaultChartData);
+  const [historicalRevenue, setHistoricalRevenue] = useState<HistoricalDataPoint[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<ChartMetric>('faturamento');
 
@@ -94,6 +103,7 @@ export default function DashboardPage() {
         } else {
             setStatsData(defaultStats);
             setChartData(defaultChartData);
+            setHistoricalRevenue([]);
         }
         if (isInitialLoad) {
             setLoadingData(false);
@@ -114,6 +124,7 @@ export default function DashboardPage() {
         console.error('Error fetching invoices for dashboard:', error);
         setStatsData(defaultStats);
         setChartData(defaultChartData);
+        setHistoricalRevenue([]);
         if (isInitialLoad) setLoadingData(false);
     });
 
@@ -169,30 +180,31 @@ export default function DashboardPage() {
         return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
       };
       
-      // Chart Data Processing
-      const monthlyChartData: { [year: string]: { [month: string]: { total: number; count: number } } } = {};
+      // Chart Data & Historical Revenue Processing
+      const monthlyData: { [year: string]: { [month: string]: { total: number; count: number } } } = {};
       const monthLabels = Array.from({length: 12}, (_, i) => format(new Date(0, i), 'MMM'));
 
       invoices.forEach(inv => {
         if (inv.status === 'cancelada' || inv.status === 'rascunho') return;
         const invDate = new Date(inv.date);
-        const year = invDate.getFullYear();
+        const year = getYear(invDate);
         const month = invDate.getMonth();
-        if(year >= now.getFullYear() - 1) {
-            if (!monthlyChartData[year]) monthlyChartData[year] = {};
-            if (!monthlyChartData[year][month]) monthlyChartData[year][month] = { total: 0, count: 0 };
-            monthlyChartData[year][month].total += inv.value;
-            monthlyChartData[year][month].count += 1;
-        }
+        
+        if (!monthlyData[year]) monthlyData[year] = {};
+        if (!monthlyData[year][month]) monthlyData[year][month] = { total: 0, count: 0 };
+        monthlyData[year][month].total += inv.value;
+        monthlyData[year][month].count += 1;
       });
       
       const newFaturamentoData: ChartDataPoint[] = [];
       const newVolumeData: ChartDataPoint[] = [];
       const newTicketMedioData: ChartDataPoint[] = [];
+      const newHistoricalRevenue: HistoricalDataPoint[] = [];
 
+      // For charts (current vs previous year)
       monthLabels.forEach((label, monthIndex) => {
-        const currentYearData = monthlyChartData[now.getFullYear()]?.[monthIndex] || { total: 0, count: 0 };
-        const previousYearData = monthlyChartData[now.getFullYear() - 1]?.[monthIndex] || { total: 0, count: 0 };
+        const currentYearData = monthlyData[now.getFullYear()]?.[monthIndex] || { total: 0, count: 0 };
+        const previousYearData = monthlyData[now.getFullYear() - 1]?.[monthIndex] || { total: 0, count: 0 };
         
         newFaturamentoData.push({ month: label, 'Ano Atual': currentYearData.total, 'Ano Anterior': previousYearData.total });
         newVolumeData.push({ month: label, 'Ano Atual': currentYearData.count, 'Ano Anterior': previousYearData.count });
@@ -203,11 +215,25 @@ export default function DashboardPage() {
         });
       });
       
+      // For forecast (all historical data)
+      Object.keys(monthlyData).sort().forEach(year => {
+        Object.keys(monthlyData[year]).sort((a,b) => parseInt(a) - parseInt(b)).forEach(month => {
+            const yearNum = parseInt(year);
+            const monthNum = parseInt(month);
+            newHistoricalRevenue.push({
+                year: yearNum,
+                month: format(new Date(yearNum, monthNum), 'MMM', { locale: ptBR }),
+                revenue: monthlyData[year][month].total
+            });
+        });
+      });
+
       setChartData({
         faturamento: newFaturamentoData,
         volume: newVolumeData,
         ticketMedio: newTicketMedioData
       });
+      setHistoricalRevenue(newHistoricalRevenue);
       
       const totalOverdue = invoices.filter(i => i.status === 'vencida').reduce((sum, i) => sum + i.value, 0);
 
@@ -276,6 +302,12 @@ export default function DashboardPage() {
             totalExpenses={statsData.totalExpenses}
             revenueTrends={statsData.totalPaidChange}
             expenseTrends={statsData.expenseTrends}
+            loading={loadingData}
+          />
+       </div>
+       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+          <ForecastAiAnalysis
+            historicalData={historicalRevenue}
             loading={loadingData}
           />
        </div>
