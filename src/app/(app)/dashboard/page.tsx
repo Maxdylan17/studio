@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import StatsCards from '@/components/dashboard/stats-cards';
 import TrendsChart from '@/components/dashboard/trends-chart';
 import AiIssuanceAnalysis from '@/components/dashboard/ai-analysis';
@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { subMonths, startOfMonth, endOfMonth, format, isAfter, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { BarChart2, CreditCard, Landmark, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 
 type StatsData = {
@@ -258,12 +260,54 @@ export default function DashboardPage() {
     ticketMedio: 'Ticket Médio (R$)',
   };
 
+  const actionCards = [
+    {
+      title: 'Gerenciar Faturas',
+      description: 'Visualize, emita e cancele suas notas.',
+      href: '/notas',
+      icon: BarChart2,
+    },
+    {
+      title: 'Controlar Despesas',
+      description: 'Adicione e acompanhe seus gastos.',
+      href: '/despesas',
+      icon: CreditCard,
+    },
+    {
+      title: 'Calcular Impostos',
+      description: 'Estime o valor do seu imposto mensal.',
+      href: '/impostos',
+      icon: Landmark,
+    },
+  ];
+
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
       </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {actionCards.map((card) => (
+          <Card key={card.href} className="hover:bg-muted/50 transition-colors">
+            <Link href={card.href} className="block h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-base font-bold">{card.title}</CardTitle>
+                <card.icon className="h-5 w-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{card.description}</p>
+                 <div className="text-sm font-medium text-primary flex items-center mt-4">
+                  Acessar <ArrowRight className="ml-1 h-4 w-4" />
+                </div>
+              </CardContent>
+            </Link>
+          </Card>
+        ))}
+      </div>
+
       <StatsCards data={statsData} loading={loadingData} />
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4 md:col-span-2">
           <CardHeader>
