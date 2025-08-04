@@ -110,12 +110,12 @@ export default function NotasPage() {
     setLoadingData(true);
     const q = query(collection(db, 'invoices'), where('userId', '==', user.uid), orderBy('date', 'desc'));
   
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
         const batch = writeBatch(db);
         let hasUpdates = false;
-
-        const invoicesData = snapshot.docs.map(doc => {
-            const data = { id: doc.id, ...doc.data() } as Invoice;
+        
+        const invoicesDataPromises = snapshot.docs.map(async (doc) => {
+            let data = { id: doc.id, ...doc.data() } as Invoice;
             // Check if a pending invoice is overdue and update it in a batch
             if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
                 const invoiceRef = doc(db, "invoices", data.id);
@@ -126,12 +126,16 @@ export default function NotasPage() {
             }
             return data;
         });
+        
+        const invoicesData = await Promise.all(invoicesDataPromises);
 
         // Commit the batch update if any invoice status changed
         if (hasUpdates) {
-            batch.commit().catch(error => {
-                console.error("Failed to batch update overdue invoices:", error);
-            });
+            try {
+                await batch.commit();
+            } catch (error) {
+                 console.error("Failed to batch update overdue invoices:", error);
+            }
         }
         
         setInvoices(invoicesData);
