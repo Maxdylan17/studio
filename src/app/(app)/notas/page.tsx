@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -112,34 +113,33 @@ export default function NotasPage() {
   
     const unsubscribe = onSnapshot(q, async (snapshot) => {
         const batch = writeBatch(db);
-        let hasUpdates = false;
+        const invoicesToUpdate: Invoice[] = [];
         
-        const invoicesDataPromises = snapshot.docs.map(async (doc) => {
-            let data = { id: doc.id, ...doc.data() } as Invoice;
+        snapshot.docs.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() } as Invoice;
             // Check if a pending invoice is overdue and update it in a batch
             if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
                 const invoiceRef = doc(db, "invoices", data.id);
                 batch.update(invoiceRef, { status: "vencida" });
-                hasUpdates = true;
-                // Return the updated status for immediate UI reflection
-                return { ...data, status: 'vencida' as const };
+                invoicesToUpdate.push({ ...data, status: 'vencida' });
             }
-            return data;
         });
-        
-        const invoicesData = await Promise.all(invoicesDataPromises);
 
         // Commit the batch update if any invoice status changed
-        if (hasUpdates) {
+        if (invoicesToUpdate.length > 0) {
             try {
                 await batch.commit();
+                // No need to manually update state, onSnapshot will trigger again with fresh data.
             } catch (error) {
                  console.error("Failed to batch update overdue invoices:", error);
             }
+        } else {
+            // If no updates were needed, just set the state with current data
+            const invoicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+            setInvoices(invoicesData);
+            setLoadingData(false);
         }
         
-        setInvoices(invoicesData);
-        setLoadingData(false);
     }, (error) => {
         console.error('Error fetching invoices: ', error);
         toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as faturas.' });

@@ -32,6 +32,7 @@ export default function ImpostosPage() {
         if (user && date) {
             generateReport();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, date]);
     
     const generateReport = async () => {

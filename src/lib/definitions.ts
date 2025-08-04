@@ -45,12 +45,12 @@ export type Expense = {
 };
 
 export type ExtractedData = {
-    recipient: {
-        name: string;
-        document: string;
-        address: string;
+    recipient?: {
+        name?: string;
+        document?: string;
+        address?: string;
     },
-    items: InvoiceItem[]
+    items?: InvoiceItem[]
 }
 
 export type ExtractedClientData = ExtractedData;
