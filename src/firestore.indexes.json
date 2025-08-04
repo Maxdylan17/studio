@@ -25,7 +25,7 @@
         { "fieldPath": "date", "order": "DESCENDING" }
       ]
     },
-    {
+     {
       "collectionGroup": "invoices",
       "queryScope": "COLLECTION",
       "fields": [
@@ -40,15 +40,6 @@
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "date", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "invoices",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }
       ]
     }
