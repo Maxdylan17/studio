@@ -39,7 +39,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, updateDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Client, Invoice } from '@/lib/definitions';
@@ -49,6 +49,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import TrendsChart from '@/components/dashboard/trends-chart';
+import { useAuth } from '@/hooks/use-auth';
 
 type ChartDataPoint = {
   month: string;
@@ -71,6 +72,7 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
   });
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useAuth();
 
   const processInvoiceDataForChart = (invoices: Invoice[]) => {
       const now = new Date();
@@ -104,13 +106,13 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
 
   React.useEffect(() => {
     const clientId = params.id;
-    if (!clientId) return;
+    if (!clientId || !user) return;
 
     setLoadingData(true);
 
     // Fetch client data
     const clientUnsubscribe = onSnapshot(doc(db, "clients", clientId), (doc) => {
-      if (doc.exists()) {
+      if (doc.exists() && doc.data().userId === user.uid) {
         const clientData = { id: doc.id, ...doc.data() } as Client;
         setClient(clientData);
         setClientFormData({
@@ -121,7 +123,7 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
           avatarPrompt: ''
         });
       } else {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Cliente não encontrado.' });
+        toast({ variant: 'destructive', title: 'Erro', description: 'Cliente não encontrado ou acesso não permitido.' });
         router.push('/clientes');
       }
     }, (error) => {
@@ -130,7 +132,13 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
     });
 
     // Fetch invoices for the client
-    const invoicesQuery = query(collection(db, "invoices"), where("clientId", "==", clientId));
+    const invoicesQuery = query(
+        collection(db, "invoices"), 
+        where("userId", "==", user.uid),
+        where("clientId", "==", clientId),
+        orderBy("date", "desc")
+    );
+
     const invoicesUnsubscribe = onSnapshot(invoicesQuery, (querySnapshot) => {
         const invoicesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Invoice[];
         setInvoices(invoicesData);
@@ -146,7 +154,7 @@ export default function ClienteDetailPage({ params }: { params: { id: string } }
       clientUnsubscribe();
       invoicesUnsubscribe();
     };
-  }, [params.id, router, toast]);
+  }, [params.id, router, toast, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
