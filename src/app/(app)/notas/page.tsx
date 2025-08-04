@@ -114,7 +114,7 @@ export default function NotasPage() {
       const invoicesData = querySnapshot.docs.map(doc => {
         const data = doc.data() as Omit<Invoice, 'id'>;
         let status = data.status;
-        if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
+        if (data.status === 'pendente' && data.dueDate && new Date(data.dueDate) < new Date()) {
           status = 'vencida';
         }
         return { id: doc.id, ...data, status } as Invoice;
@@ -135,12 +135,7 @@ export default function NotasPage() {
     try {
       const invoiceRef = doc(db, 'invoices', invoiceId);
       await updateDoc(invoiceRef, { status });
-      setInvoices(prevInvoices => prevInvoices.map(inv => 
-        inv.id === invoiceId ? { ...inv, status } : inv
-      ));
-      if (selectedInvoice?.id === invoiceId) {
-        setSelectedInvoice(prev => prev ? { ...prev, status } : null);
-      }
+      // The onSnapshot listener will automatically update the state.
       toast({ title: 'Status Atualizado!', description: `A fatura foi marcada como ${status}.` });
     } catch (error) {
       console.error('Error updating status: ', error);

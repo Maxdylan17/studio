@@ -15,7 +15,6 @@ export type Invoice = {
     nome: string;
     cpf_cnpj: string;
     endereco?: string;
-    clientId?: string;
   }
   date: string;
   status: 'pendente' | 'paga' | 'vencida' | 'cancelada' | 'rascunho';
