@@ -102,10 +102,10 @@ export default function NotasPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const fetchInvoices = () => {
+  useEffect(() => {
     if (!user) {
       setLoadingData(false);
-      return () => {};
+      return;
     }
     setLoadingData(true);
     const q = query(collection(db, 'invoices'), where('userId', '==', user.uid), orderBy('date', 'desc'));
@@ -113,11 +113,12 @@ export default function NotasPage() {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const invoicesData = querySnapshot.docs.map(doc => {
         const data = doc.data() as Omit<Invoice, 'id'>;
+        let status = data.status;
         if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
-          return { id: doc.id, ...data, status: 'vencida' };
+          status = 'vencida';
         }
-        return { id: doc.id, ...data } as Invoice;
-      }) as Invoice[];
+        return { id: doc.id, ...data, status } as Invoice;
+      })
       setInvoices(invoicesData);
       setLoadingData(false);
     }, (error) => {
@@ -126,11 +127,6 @@ export default function NotasPage() {
       setLoadingData(false);
     });
   
-    return unsubscribe;
-  };
-  
-  useEffect(() => {
-    const unsubscribe = fetchInvoices();
     return () => unsubscribe();
   }, [user, toast]);
 
@@ -139,6 +135,12 @@ export default function NotasPage() {
     try {
       const invoiceRef = doc(db, 'invoices', invoiceId);
       await updateDoc(invoiceRef, { status });
+      setInvoices(prevInvoices => prevInvoices.map(inv => 
+        inv.id === invoiceId ? { ...inv, status } : inv
+      ));
+      if (selectedInvoice?.id === invoiceId) {
+        setSelectedInvoice(prev => prev ? { ...prev, status } : null);
+      }
       toast({ title: 'Status Atualizado!', description: `A fatura foi marcada como ${status}.` });
     } catch (error) {
       console.error('Error updating status: ', error);

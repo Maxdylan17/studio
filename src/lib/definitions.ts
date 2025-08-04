@@ -47,9 +47,9 @@ export type Expense = {
 
 export type ExtractedData = {
     recipient: {
-        name?: string;
-        document?: string;
-        address?: string;
+        name: string;
+        document: string;
+        address: string;
     },
     items: InvoiceItem[]
 }
