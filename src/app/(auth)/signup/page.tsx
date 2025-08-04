@@ -19,6 +19,7 @@ import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import Link from 'next/link';
 import { Logo } from '@/components/layout/logo';
+import { seedDataForUser } from '@/lib/seed-data';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -35,7 +36,17 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
       
-      toast({ title: 'Cadastro realizado com sucesso!', description: 'Você será redirecionado para o login.' });
+      toast({ title: 'Conta criada com sucesso!', description: 'Estamos preparando alguns dados de exemplo para você...' });
+
+      // Seed database with sample data
+      try {
+        await seedDataForUser(userCredential.user.uid);
+        toast({ title: 'Tudo pronto!', description: 'Seus dados de exemplo foram carregados. Redirecionando...' });
+      } catch (seedError) {
+        console.error("Data seeding failed:", seedError);
+        toast({ variant: 'destructive', title: 'Erro nos Dados de Exemplo', description: 'Não conseguimos criar os dados de exemplo, mas sua conta foi criada. Você pode prosseguir.' });
+      }
+      
       router.push('/login');
     } catch (error: any) {
       toast({
@@ -98,7 +109,7 @@ export default function SignupPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Criando conta...' : 'Cadastrar'}
+              {loading ? 'Criando conta e dados...' : 'Cadastrar e ver Exemplo'}
             </Button>
           </form>
         </CardContent>
@@ -114,5 +125,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
-    
