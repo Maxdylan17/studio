@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import type { Invoice } from '@/lib/definitions';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -63,6 +64,7 @@ export default function ImpostosPage() {
                 where('status', '==', 'paga'),
                 where('date', '>=', format(monthStart, 'yyyy-MM-dd')),
                 where('date', '<=', format(monthEnd, 'yyyy-MM-dd')),
+                orderBy('date', 'desc')
             );
 
             const querySnapshot = await getDocs(invoicesQuery);
