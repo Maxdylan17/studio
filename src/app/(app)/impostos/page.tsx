@@ -13,7 +13,7 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DatePickerWithPresets } from '@/components/impostos/date-picker';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DollarSign, Percent, Banknote } from 'lucide-react';
+import { DollarSign, Percent, Banknote, Search } from 'lucide-react';
 
 type ReportData = {
     totalRevenue: number;
@@ -28,13 +28,6 @@ export default function ImpostosPage() {
     const [date, setDate] = useState<Date>(new Date());
     const [reportData, setReportData] = useState<ReportData>(null);
     const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (user && date) {
-            generateReport();
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user, date]);
     
     const generateReport = async () => {
         if (!user || !date) return;
@@ -84,7 +77,7 @@ export default function ImpostosPage() {
 
         } catch (error) {
             console.error("Error generating tax report: ", error);
-            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível gerar o relatório.' });
+            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível gerar o relatório. Verifique se os índices do Firestore foram criados corretamente.' });
         } finally {
             setLoading(false);
         }
@@ -101,6 +94,9 @@ export default function ImpostosPage() {
                 </div>
                 <div className="flex items-center gap-2">
                    <DatePickerWithPresets date={date} setDate={setDate} />
+                   <Button onClick={generateReport} disabled={loading}>
+                       <Search className="mr-2 h-4 w-4" /> Gerar Relatório
+                   </Button>
                 </div>
             </div>
 
@@ -126,9 +122,9 @@ export default function ImpostosPage() {
                                         {reportData?.totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00'}
                                     </div>
                                 )}
-                                <div className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                     {loading ? <Skeleton className="h-4 w-1/2 mt-1" /> : `Baseado em ${reportData?.invoiceCount ?? 0} nota(s) paga(s).`}
-                                </div>
+                                </p>
                             </CardContent>
                         </Card>
                          <Card>
@@ -144,9 +140,9 @@ export default function ImpostosPage() {
                                         {reportData?.taxRate.toFixed(2) ?? '0.00'}%
                                     </div>
                                 )}
-                                <div className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                     {loading ? <Skeleton className="h-4 w-1/2 mt-1" /> : 'Configurada na página de Configurações.'}
-                                </div>
+                                </p>
                             </CardContent>
                         </Card>
                          <Card className="border-primary/50 bg-primary/5">
@@ -162,12 +158,17 @@ export default function ImpostosPage() {
                                         {reportData?.estimatedTax.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00'}
                                     </div>
                                 )}
-                                <div className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                     {loading ? <Skeleton className="h-4 w-1/2 mt-1" /> : 'Este é o valor estimado para o DAS.'}
-                                </div>
+                                </p>
                             </CardContent>
                         </Card>
                     </div>
+                    {!reportData && !loading && (
+                        <div className="text-center text-muted-foreground py-12">
+                            <p>Selecione um período e clique em "Gerar Relatório" para ver os dados.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

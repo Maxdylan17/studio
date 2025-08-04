@@ -31,11 +31,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, doc, deleteDoc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, addDoc, doc, deleteDoc, query, where, onSnapshot, orderBy, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import type { Expense } from '@/lib/definitions';
-import { PlusCircle, Trash2, FileText, CalendarIcon } from 'lucide-react';
+import { PlusCircle, Trash2, FileText, CalendarIcon, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -63,8 +63,9 @@ const expenseCategories = [
 
 export default function DespesasPage() {
   const [expenses, setExpenses] = React.useState<Expense[]>([]);
-  const [loadingData, setLoadingData] = React.useState(true);
+  const [loadingData, setLoadingData] = React.useState(false);
   const [open, setOpen] = React.useState(false);
+  const [hasSearched, setHasSearched] = React.useState(false);
   const [expenseFormData, setExpenseFormData] = React.useState({
     description: '',
     value: '',
@@ -74,28 +75,23 @@ export default function DespesasPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  React.useEffect(() => {
-    if (!user) {
-      setLoadingData(false);
-      return;
-    };
+  const fetchExpenses = async () => {
+    if (!user) return;
     
     setLoadingData(true);
-    const q = query(collection(db, "expenses"), where("userId", "==", user.uid), orderBy("date", "desc"));
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    setHasSearched(true);
+    try {
+        const q = query(collection(db, "expenses"), where("userId", "==", user.uid), orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
         const expensesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Expense[];
         setExpenses(expensesData);
-        setLoadingData(false);
-    }, (error) => {
+    } catch (error) {
         console.error("Error fetching expenses: ", error);
         toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as despesas.' });
+    } finally {
         setLoadingData(false);
-    });
-
-    return () => unsubscribe();
-  }, [user, toast]);
-
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -138,7 +134,7 @@ export default function DespesasPage() {
           description: `${expenseFormData.description} foi adicionada à sua lista.`,
         });
         setOpen(false);
-
+        fetchExpenses();
     } else {
         toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Preencha todos os campos para salvar.' });
     }
@@ -151,6 +147,7 @@ export default function DespesasPage() {
         description: 'A despesa foi removida da sua lista.',
         variant: 'destructive'
     })
+    fetchExpenses();
   };
   
   const isLoading = loadingData;
@@ -229,11 +226,16 @@ export default function DespesasPage() {
          </Dialog>
       </div>
       <Card>
-        <CardHeader>
-            <CardTitle>Histórico de Despesas</CardTitle>
-            <CardDescription>
-                Visualize e gerencie suas despesas lançadas.
-            </CardDescription>
+        <CardHeader className='flex-row items-center justify-between'>
+            <div>
+                <CardTitle>Histórico de Despesas</CardTitle>
+                <CardDescription>
+                    Visualize e gerencie suas despesas lançadas.
+                </CardDescription>
+            </div>
+            <Button onClick={fetchExpenses} disabled={loadingData}>
+                <Search className="mr-2 h-4 w-4" /> Buscar Despesas
+            </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -259,7 +261,7 @@ export default function DespesasPage() {
                     <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : expenses.length > 0 ? (
+              ) : hasSearched && expenses.length > 0 ? (
                 expenses.map((expense) => (
                     <TableRow key={expense.id}>
                         <TableCell className="font-medium">{expense.description}</TableCell>
@@ -284,7 +286,7 @@ export default function DespesasPage() {
                         <div className="text-center text-muted-foreground py-8">
                             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                             <p className='mb-2 font-medium'>Nenhuma despesa encontrada.</p>
-                            <p className='text-sm'>Adicione uma nova despesa para começar.</p>
+                            <p className='text-sm'>Clique em "Buscar Despesas" ou adicione uma nova.</p>
                         </div>
                     </TableCell>
                 </TableRow>

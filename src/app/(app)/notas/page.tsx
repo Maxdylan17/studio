@@ -38,9 +38,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
-import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2, MoreHorizontal, CheckCircle, Clock } from 'lucide-react';
+import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2, MoreHorizontal, CheckCircle, Clock, Search } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc, updateDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleGenerateInvoiceEmail } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
@@ -90,8 +90,9 @@ const statusConfig: { [key in Invoice['status']]: { variant: "default" | "second
 
 export default function NotasPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -103,56 +104,46 @@ export default function NotasPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!user) {
-      setLoadingData(false);
-      return;
-    }
-    setLoadingData(true);
-    const q = query(collection(db, 'invoices'), where('userId', '==', user.uid), orderBy('date', 'desc'));
-  
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-        const invoicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
-        const overdueInvoices = invoicesData.filter(
-            inv => inv.status === 'pendente' && inv.dueDate && isAfter(new Date(), new Date(inv.dueDate))
-        );
+  const fetchInvoices = async () => {
+      if (!user) return;
 
-        if (overdueInvoices.length > 0) {
-            const batch = writeBatch(db);
-            overdueInvoices.forEach(inv => {
-                const invoiceRef = doc(db, "invoices", inv.id);
-                batch.update(invoiceRef, { status: "vencida" });
-            });
-            try {
-                await batch.commit();
-                // The snapshot will be re-triggered by the batch commit, so no need to set state here.
-            } catch (error) {
-                 console.error("Failed to batch update overdue invoices:", error);
-                 // If update fails, still show the data we fetched.
-                 setInvoices(invoicesData);
-                 setLoadingData(false);
-            }
-        } else {
-            setInvoices(invoicesData);
-            setLoadingData(false);
-        }
-        
-    }, (error) => {
-        console.error('Error fetching invoices: ', error);
-        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as faturas.' });
-        setLoadingData(false);
-    });
-  
-    return () => unsubscribe();
-  }, [user, toast]);
+      setLoadingData(true);
+      setHasSearched(true);
+      try {
+          const q = query(collection(db, 'invoices'), where('userId', '==', user.uid), orderBy('date', 'desc'));
+          const snapshot = await getDocs(q);
+          const invoicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+          const overdueInvoices = invoicesData.filter(
+              inv => inv.status === 'pendente' && inv.dueDate && isAfter(new Date(), new Date(inv.dueDate))
+          );
+
+          if (overdueInvoices.length > 0) {
+              const batch = writeBatch(db);
+              overdueInvoices.forEach(inv => {
+                  const invoiceRef = doc(db, "invoices", inv.id);
+                  batch.update(invoiceRef, { status: "vencida" });
+              });
+              await batch.commit();
+              // Re-fetch after updating statuses
+              fetchInvoices();
+          } else {
+              setInvoices(invoicesData);
+          }
+      } catch (error) {
+          console.error('Error fetching invoices: ', error);
+          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as faturas.' });
+      } finally {
+          setLoadingData(false);
+      }
+  }
 
   const handleUpdateStatus = async (invoiceId: string, status: Invoice['status']) => {
     setLoadingAction(`status-${invoiceId}`);
     try {
       const invoiceRef = doc(db, 'invoices', invoiceId);
       await updateDoc(invoiceRef, { status });
-      // The onSnapshot listener will automatically update the state.
       toast({ title: 'Status Atualizado!', description: `A fatura foi marcada como ${status}.` });
+      fetchInvoices();
     } catch (error) {
       console.error('Error updating status: ', error);
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível atualizar o status.' });
@@ -168,6 +159,7 @@ export default function NotasPage() {
       await deleteDoc(doc(db, "invoices", invoiceId));
       toast({ title: 'Fatura Excluída!', description: 'A fatura foi removida do seu histórico.' });
       setDetailsDialogOpen(false); 
+      fetchInvoices();
     } catch (error) {
       console.error("Error deleting invoice: ", error);
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir a fatura.' });
@@ -330,11 +322,16 @@ export default function NotasPage() {
         </Button>
       </div>
       <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Emissões</CardTitle>
-          <CardDescription>
-            Visualize e gerencie suas faturas emitidas.
-          </CardDescription>
+        <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Histórico de Emissões</CardTitle>
+              <CardDescription>
+                Visualize e gerencie suas faturas emitidas.
+              </CardDescription>
+            </div>
+             <Button onClick={fetchInvoices} disabled={loadingData}>
+                <Search className="mr-2 h-4 w-4" /> Buscar Faturas
+            </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -358,7 +355,7 @@ export default function NotasPage() {
                         <TableCell className="text-right"><Skeleton className="h-9 w-24 ml-auto" /></TableCell>
                     </TableRow>
                 ))
-              ) : invoices.length > 0 ? (
+              ) : hasSearched && invoices.length > 0 ? (
                 invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell>
@@ -418,7 +415,7 @@ export default function NotasPage() {
                          <div className="text-center text-muted-foreground py-12">
                             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                             <p className='mb-2 font-medium'>Nenhuma fatura encontrada.</p>
-                            <p className='text-sm'>Vá para a página "Emitir Nota" para criar sua primeira.</p>
+                            <p className='text-sm'>Clique em "Buscar Faturas" para começar.</p>
                         </div>
                      </TableCell>
                 </TableRow>
