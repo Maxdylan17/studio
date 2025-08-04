@@ -39,7 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Invoice } from '@/lib/definitions';
 import { Download, Mail, Eye, FileText, RefreshCw, Send, X, Trash2, MoreHorizontal, CheckCircle, Clock } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, getDoc, doc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { handleGenerateInvoiceEmail } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
@@ -110,21 +110,36 @@ export default function NotasPage() {
     setLoadingData(true);
     const q = query(collection(db, 'invoices'), where('userId', '==', user.uid), orderBy('date', 'desc'));
   
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const invoicesData = querySnapshot.docs.map(doc => {
-        const data = doc.data() as Omit<Invoice, 'id'>;
-        let status = data.status;
-        if (data.status === 'pendente' && data.dueDate && new Date(data.dueDate) < new Date()) {
-          status = 'vencida';
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const batch = writeBatch(db);
+        let hasUpdates = false;
+
+        const invoicesData = snapshot.docs.map(doc => {
+            const data = { id: doc.id, ...doc.data() } as Invoice;
+            // Check if a pending invoice is overdue and update it in a batch
+            if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
+                const invoiceRef = doc(db, "invoices", data.id);
+                batch.update(invoiceRef, { status: "vencida" });
+                hasUpdates = true;
+                // Return the updated status for immediate UI reflection
+                return { ...data, status: 'vencida' as const };
+            }
+            return data;
+        });
+
+        // Commit the batch update if any invoice status changed
+        if (hasUpdates) {
+            batch.commit().catch(error => {
+                console.error("Failed to batch update overdue invoices:", error);
+            });
         }
-        return { id: doc.id, ...data, status } as Invoice;
-      })
-      setInvoices(invoicesData);
-      setLoadingData(false);
+        
+        setInvoices(invoicesData);
+        setLoadingData(false);
     }, (error) => {
-      console.error('Error fetching invoices: ', error);
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as faturas.' });
-      setLoadingData(false);
+        console.error('Error fetching invoices: ', error);
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as faturas.' });
+        setLoadingData(false);
     });
   
     return () => unsubscribe();
