@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import type { Invoice } from '@/lib/definitions';
-import { format, startOfMonth, endOfMonth, subMonths, getYear } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DatePickerWithPresets } from '@/components/impostos/date-picker';
 import { Skeleton } from '@/components/ui/skeleton';
