@@ -94,10 +94,23 @@ export default function ConfiguracoesPage() {
   }
 
   const handleConnectGitHub = () => {
+    // This is the first step of the OAuth flow.
+    // The client_id would be your GitHub App's client ID.
+    // The redirect_uri is where GitHub sends the user back after authorization.
+    const githubClientId = 'YOUR_GITHUB_CLIENT_ID'; // Placeholder
+    const redirectUri = `${window.location.origin}/api/auth/github/callback`; // Placeholder
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${redirectUri}&scope=repo`;
+    
     toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: "A conexão com o GitHub ainda não foi implementada."
-    })
+        title: "Redirecionando para o GitHub...",
+        description: "Você precisa autorizar o acesso para continuar."
+    });
+
+    // In a real app, you would redirect the user.
+    // window.location.href = githubAuthUrl;
+    
+    console.log("A implementação completa requer um Client ID do GitHub e um endpoint de backend.");
+    console.log("Redirecionaria para:", githubAuthUrl);
   }
 
   return (
