@@ -1,37 +1,28 @@
 
 'use client';
 
-import { useState } from 'react';
-import { AiCapture } from '@/components/captura/ai-capture';
-import { CaptureForm } from '@/components/captura/capture-form';
-import type { ExtractedData } from '@/lib/definitions';
+import { useEffect } from 'react';
+import { useRouter }from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
+// This page is deprecated and now redirects to the new unified issuance page.
+export default function DeprecatedCapturaPage() {
+    const router = useRouter();
 
-export default function CapturaPage() {
-  const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
-  const [showForm, setShowForm] = useState(false);
-
-  const handleExtractionComplete = (data: ExtractedData) => {
-    setExtractedData(data);
-    setShowForm(true);
-  };
+    useEffect(() => {
+        router.replace('/emitir');
+    }, [router]);
   
-  const handleReset = () => {
-    setExtractedData(null);
-    setShowForm(false);
-  }
-
   return (
-    <div className="space-y-4 p-4 sm:p-8 pt-6 animate-in fade-in-0">
-      <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Captura Inteligente</h1>
-      </div>
-
-      {!showForm ? (
-         <AiCapture onExtractionComplete={handleExtractionComplete} />
-      ) : (
-         <CaptureForm initialData={extractedData} onReset={handleReset} />
-      )}
+    <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2 text-center">
+                <p>Redirecionando para a nova página de emissão...</p>
+                <Skeleton className="h-4 w-[250px] mx-auto" />
+                <Skeleton className="h-4 w-[200px] mx-auto" />
+            </div>
+        </div>
     </div>
   );
 }

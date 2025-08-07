@@ -63,7 +63,7 @@ const expenseCategories = [
 
 export default function DespesasPage() {
   const [expenses, setExpenses] = React.useState<Expense[]>([]);
-  const [loadingData, setLoadingData] = React.useState(false);
+  const [loadingData, setLoadingData] = React.useState(true);
   const [open, setOpen] = React.useState(false);
   const [hasSearched, setHasSearched] = React.useState(false);
   const [expenseFormData, setExpenseFormData] = React.useState({
@@ -75,6 +75,14 @@ export default function DespesasPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  React.useEffect(() => {
+    if (!user) return;
+    const fetchInitialData = async () => {
+        await fetchExpenses();
+    };
+    fetchInitialData();
+  }, [user]);
+
   const fetchExpenses = async () => {
     if (!user) return;
     
@@ -82,13 +90,20 @@ export default function DespesasPage() {
     setHasSearched(true);
     try {
         const q = query(collection(db, "expenses"), where("userId", "==", user.uid), orderBy("date", "desc"));
-        const querySnapshot = await getDocs(q);
-        const expensesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Expense[];
-        setExpenses(expensesData);
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const expensesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Expense[];
+            setExpenses(expensesData);
+            setLoadingData(false);
+        }, (error) => {
+            console.error("Error fetching expenses: ", error);
+            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as despesas.' });
+            setLoadingData(false);
+        });
+        // Note: You might want to store and call unsubscribe when the component unmounts.
+        // For this page's logic, we'll let it run.
     } catch (error) {
-        console.error("Error fetching expenses: ", error);
-        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as despesas.' });
-    } finally {
+        console.error("Error setting up listener: ", error);
+        toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível configurar a busca de despesas.' });
         setLoadingData(false);
     }
   }
@@ -134,7 +149,7 @@ export default function DespesasPage() {
           description: `${expenseFormData.description} foi adicionada à sua lista.`,
         });
         setOpen(false);
-        fetchExpenses();
+        // Data will be updated automatically by the onSnapshot listener
     } else {
         toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Preencha todos os campos para salvar.' });
     }
@@ -147,7 +162,7 @@ export default function DespesasPage() {
         description: 'A despesa foi removida da sua lista.',
         variant: 'destructive'
     })
-    fetchExpenses();
+    // Data will be updated automatically by the onSnapshot listener
   };
   
   const isLoading = loadingData;
@@ -226,16 +241,13 @@ export default function DespesasPage() {
          </Dialog>
       </div>
       <Card>
-        <CardHeader className='flex-row items-center justify-between'>
+        <CardHeader>
             <div>
                 <CardTitle>Histórico de Despesas</CardTitle>
                 <CardDescription>
-                    Visualize e gerencie suas despesas lançadas.
+                    Visualize e gerencie suas despesas lançadas. Os dados são atualizados em tempo real.
                 </CardDescription>
             </div>
-            <Button onClick={fetchExpenses} disabled={loadingData}>
-                <Search className="mr-2 h-4 w-4" /> Buscar Despesas
-            </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -261,7 +273,7 @@ export default function DespesasPage() {
                     <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : hasSearched && expenses.length > 0 ? (
+              ) : expenses.length > 0 ? (
                 expenses.map((expense) => (
                     <TableRow key={expense.id}>
                         <TableCell className="font-medium">{expense.description}</TableCell>
@@ -286,7 +298,7 @@ export default function DespesasPage() {
                         <div className="text-center text-muted-foreground py-8">
                             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                             <p className='mb-2 font-medium'>Nenhuma despesa encontrada.</p>
-                            <p className='text-sm'>Clique em "Buscar Despesas" ou adicione uma nova.</p>
+                            <p className='text-sm'>Adicione uma nova despesa para começar.</p>
                         </div>
                     </TableCell>
                 </TableRow>

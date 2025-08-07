@@ -9,16 +9,16 @@ import type { ExtractedData } from '@/lib/definitions';
 
 export default function EmitirPage() {
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [formKey, setFormKey] = useState(Date.now()); // Add a key to force re-mount
 
   const handleExtractionComplete = (data: ExtractedData) => {
     setExtractedData(data);
-    setShowForm(true);
+    setFormKey(Date.now()); // Update key to re-render form with new initialData
   };
   
   const handleReset = () => {
     setExtractedData(null);
-    setShowForm(false);
+    setFormKey(Date.now()); // Update key to re-render form from a clean state
   }
 
   return (
@@ -27,11 +27,10 @@ export default function EmitirPage() {
         <h1 className="text-3xl font-bold tracking-tight">Gerador NF-e</h1>
       </div>
 
-      {!showForm ? (
-         <AiIssuance onExtractionComplete={handleExtractionComplete} />
-      ) : (
-         <IssuanceForm initialData={extractedData} onReset={handleReset} />
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <AiIssuance onExtractionComplete={handleExtractionComplete} />
+        <IssuanceForm key={formKey} initialData={extractedData} onReset={handleReset} />
+      </div>
     </div>
   );
 }

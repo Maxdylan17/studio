@@ -21,8 +21,9 @@ const links = [
   { href: '/emitir', label: 'Gerador NF-e', icon: FilePen },
   { href: '/clientes', label: 'Clientes', icon: Users },
   { href: '/notas', label: 'Faturas', icon: BarChart2 },
-  { href: '/captura', label: 'Captura de Dados', icon: ScanLine },
+  { href: '/despesas', label: 'Despesas', icon: CreditCard },
   { href: '/relatorios', label: 'Assistente IA', icon: BrainCircuit },
+  { href: '/impostos', label: 'Impostos', icon: Landmark },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
@@ -33,7 +34,7 @@ export function SidebarNav() {
     <SidebarMenu>
       {links.map((link) => {
         const Icon = link.icon;
-        const isActive = pathname.startsWith(link.href) && link.href !== '/';
+        const isActive = pathname.startsWith(link.href) && (link.href !== '/' || pathname === '/');
         const isDashboardActive = pathname === '/' && link.href === '/dashboard';
 
         return (
