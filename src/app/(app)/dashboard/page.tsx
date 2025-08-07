@@ -92,28 +92,24 @@ export default function DashboardPage() {
     const qInvoices = query(collection(db, 'invoices'), where('userId', '==', user.uid));
     const qExpenses = query(collection(db, 'expenses'), where('userId', '==', user.uid));
     
-    let invoicesUnsubscribe: () => void;
-    let expensesUnsubscribe: () => void;
-
+    let isInitialLoad = true;
     let invoicesData: Invoice[] = [];
     let expensesData: Expense[] = [];
-    let isInitialLoad = true;
+    let invoicesLoaded = false;
+    let expensesLoaded = false;
 
-    const processAllData = () => {
-        if (invoicesData.length > 0 || expensesData.length > 0) {
+    const processAllDataIfNeeded = () => {
+        // Only process when both datasets are loaded to avoid multiple re-renders
+        if (invoicesLoaded && expensesLoaded) {
             processFinancialData(invoicesData, expensesData);
-        } else {
-            setStatsData(defaultStats);
-            setChartData(defaultChartData);
-            setHistoricalRevenue([]);
+            if (isInitialLoad) {
+                setLoadingData(false);
+                isInitialLoad = false;
+            }
         }
-        if (isInitialLoad) {
-            setLoadingData(false);
-            isInitialLoad = false;
-        }
-    }
+    };
   
-    invoicesUnsubscribe = onSnapshot(qInvoices, (querySnapshot) => {
+    const invoicesUnsubscribe = onSnapshot(qInvoices, (querySnapshot) => {
         invoicesData = querySnapshot.docs.map(doc => {
             const data = doc.data() as Omit<Invoice, 'id'>;
             if (data.status === 'pendente' && data.dueDate && isAfter(new Date(), new Date(data.dueDate))) {
@@ -121,27 +117,27 @@ export default function DashboardPage() {
             }
             return { id: doc.id, ...data } as Invoice;
         }) as Invoice[];
-        processAllData();
+        invoicesLoaded = true;
+        processAllDataIfNeeded();
     }, (error) => {
         console.error('Error fetching invoices for dashboard:', error);
-        setStatsData(defaultStats);
-        setChartData(defaultChartData);
-        setHistoricalRevenue([]);
-        if (isInitialLoad) setLoadingData(false);
+        invoicesLoaded = true;
+        processAllDataIfNeeded();
     });
 
-    expensesUnsubscribe = onSnapshot(qExpenses, (querySnapshot) => {
+    const expensesUnsubscribe = onSnapshot(qExpenses, (querySnapshot) => {
         expensesData = querySnapshot.docs.map(doc => doc.data() as Expense) as Expense[];
-        processAllData();
+        expensesLoaded = true;
+        processAllDataIfNeeded();
     }, (error) => {
         console.error('Error fetching expenses for dashboard:', error);
-        // Do not reset all data, just process what we have
-        processAllData(); 
+        expensesLoaded = true;
+        processAllDataIfNeeded();
     });
   
     return () => {
-      if (invoicesUnsubscribe) invoicesUnsubscribe();
-      if (expensesUnsubscribe) expensesUnsubscribe();
+      invoicesUnsubscribe();
+      expensesUnsubscribe();
     };
   }, [user]);
 
