@@ -278,69 +278,72 @@ export function IssuanceForm({ initialData, onReset }: IssuanceFormProps) {
 
                  <Separator/>
 
-                 <FormField
-                  control={form.control}
-                  name="naturezaOperacao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Natureza da Operação</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de operação" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Venda de mercadoria">Venda de mercadoria</SelectItem>
-                          <SelectItem value="Prestação de serviço">Prestação de serviço</SelectItem>
-                          <SelectItem value="Remessa">Remessa</SelectItem>
-                          <SelectItem value="Retorno">Retorno</SelectItem>
-                          <SelectItem value="Devolução">Devolução</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
                     control={form.control}
-                    name="dueDate"
+                    name="naturezaOperacao"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                        <FormLabel>Data de Vencimento</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
+                        <FormItem>
+                        <FormLabel>Natureza da Operação</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                                >
-                                {field.value ? (
-                                    format(field.value, "PPP")
-                                ) : (
-                                    <span>Selecione uma data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione o tipo de operação" />
+                            </SelectTrigger>
                             </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
-                            />
-                            </PopoverContent>
-                        </Popover>
+                            <SelectContent>
+                            <SelectItem value="Venda de mercadoria">Venda de mercadoria</SelectItem>
+                            <SelectItem value="Prestação de serviço">Prestação de serviço</SelectItem>
+                            <SelectItem value="Remessa">Remessa</SelectItem>
+                            <SelectItem value="Retorno">Retorno</SelectItem>
+                            <SelectItem value="Devolução">Devolução</SelectItem>
+                            </SelectContent>
+                        </Select>
                         <FormMessage />
                         </FormItem>
                     )}
-                />
+                    />
+                    <FormField
+                        control={form.control}
+                        name="dueDate"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                            <FormLabel>Data de Vencimento</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                    )}
+                                    >
+                                    {field.value ? (
+                                        format(field.value, "PPP")
+                                    ) : (
+                                        <span>Selecione uma data</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) => date < new Date()}
+                                    initialFocus
+                                />
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                
 
                 <Separator/>
 

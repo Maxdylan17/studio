@@ -112,23 +112,26 @@ export default function NotasPage() {
       try {
           const q = query(collection(db, 'invoices'), where('userId', '==', user.uid), orderBy('date', 'desc'));
           const snapshot = await getDocs(q);
-          const invoicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
-          const overdueInvoices = invoicesData.filter(
-              inv => inv.status === 'pendente' && inv.dueDate && isAfter(new Date(), new Date(inv.dueDate))
-          );
-
-          if (overdueInvoices.length > 0) {
-              const batch = writeBatch(db);
-              overdueInvoices.forEach(inv => {
+          let invoicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+          
+          let needsUpdate = false;
+          const batch = writeBatch(db);
+          invoicesData = invoicesData.map(inv => {
+              if (inv.status === 'pendente' && inv.dueDate && isAfter(new Date(), new Date(inv.dueDate))) {
                   const invoiceRef = doc(db, "invoices", inv.id);
                   batch.update(invoiceRef, { status: "vencida" });
-              });
+                  needsUpdate = true;
+                  return { ...inv, status: 'vencida' };
+              }
+              return inv;
+          });
+
+          if (needsUpdate) {
               await batch.commit();
-              // Re-fetch after updating statuses
-              fetchInvoices();
-          } else {
-              setInvoices(invoicesData);
           }
+          
+          setInvoices(invoicesData);
+
       } catch (error) {
           console.error('Error fetching invoices: ', error);
           toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar as faturas.' });
@@ -143,7 +146,9 @@ export default function NotasPage() {
       const invoiceRef = doc(db, 'invoices', invoiceId);
       await updateDoc(invoiceRef, { status });
       toast({ title: 'Status Atualizado!', description: `A fatura foi marcada como ${status}.` });
-      fetchInvoices();
+      // Optimistic update
+      setInvoices(prev => prev.map(inv => inv.id === invoiceId ? {...inv, status} : inv));
+      setSelectedInvoice(prev => prev && prev.id === invoiceId ? {...prev, status} : prev);
     } catch (error) {
       console.error('Error updating status: ', error);
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível atualizar o status.' });
@@ -159,7 +164,7 @@ export default function NotasPage() {
       await deleteDoc(doc(db, "invoices", invoiceId));
       toast({ title: 'Fatura Excluída!', description: 'A fatura foi removida do seu histórico.' });
       setDetailsDialogOpen(false); 
-      fetchInvoices();
+      setInvoices(prev => prev.filter(inv => inv.id !== invoiceId));
     } catch (error) {
       console.error("Error deleting invoice: ", error);
       toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir a fatura.' });
